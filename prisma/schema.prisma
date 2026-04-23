@@ -74,6 +74,7 @@ model Trip {
   interests            String[]
   foodPreferences      String[]
   dietaryRestrictions  String[]
+  notes                String?
   status               String      @default("planning")
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt

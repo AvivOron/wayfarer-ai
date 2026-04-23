@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { Search, Plus, Sparkles, Loader2, MapPin, Star, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -185,6 +184,7 @@ export function PlannerClient({ trip }: Props) {
           interests: trip.interests,
           foodPreferences: trip.foodPreferences,
           dietaryRestrictions: trip.dietaryRestrictions,
+          notes: trip.notes ?? undefined,
           mustSee: activities.map(a => ({
             name: a.name,
             address: a.address ?? '',

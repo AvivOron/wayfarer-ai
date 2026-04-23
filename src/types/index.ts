@@ -72,6 +72,7 @@ export interface Trip {
   interests: string[]
   foodPreferences: string[]
   dietaryRestrictions: string[]
+  notes: string | null
   status: TripStatus
   createdAt: string
   updatedAt: string

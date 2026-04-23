@@ -192,9 +192,9 @@ export function LiveModeClient({ trip }: Props) {
             </div>
             {tooFar ? (
               <>
-                <p className="text-sm font-semibold text-amber-800">You're not in {trip.destination}</p>
+                <p className="text-sm font-semibold text-amber-800">You&apos;re not in {trip.destination}</p>
                 <p className="text-xs text-amber-700 px-6 text-center">
-                  {Math.round(distanceFromDestination!)} km away · Live Mode works when you're at your destination
+                  {Math.round(distanceFromDestination!)} km away · Live Mode works when you&apos;re at your destination
                 </p>
               </>
             ) : (

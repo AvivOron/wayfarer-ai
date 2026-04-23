@@ -26,6 +26,7 @@ interface WizardData {
   interests: string[]
   foodPreferences: string[]
   dietaryRestrictions: string[]
+  notes: string
 }
 
 const STEPS = [
@@ -35,6 +36,7 @@ const STEPS = [
   { title: 'Who\'s coming?', subtitle: 'Group details' },
   { title: 'Your style', subtitle: 'What do you love to do?' },
   { title: 'Food & dining', subtitle: 'Let us find the perfect spots for you' },
+  { title: 'Anything else?', subtitle: 'Fixed plans, events, or special requests' },
 ]
 
 export function OnboardingWizard() {
@@ -56,6 +58,7 @@ export function OnboardingWizard() {
     interests: [],
     foodPreferences: [],
     dietaryRestrictions: [],
+    notes: '',
   })
 
   function update(patch: Partial<WizardData>) {
@@ -69,6 +72,7 @@ export function OnboardingWizard() {
     if (step === 3) return data.groupSize >= 1
     if (step === 4) return data.interests.length > 0
     if (step === 5) return true
+    if (step === 6) return true
     return false
   }
 
@@ -108,7 +112,7 @@ export function OnboardingWizard() {
       </div>
 
       {/* Step content */}
-      <main className="flex-1 px-6 py-8 max-w-lg mx-auto w-full">
+      <main className="flex-1 px-6 py-8 max-w-lg mx-auto w-full pb-32">
         <h1 className="text-2xl font-bold mb-1">{STEPS[step].title}</h1>
         <p className="text-muted-foreground mb-8">{STEPS[step].subtitle}</p>
 
@@ -118,10 +122,11 @@ export function OnboardingWizard() {
         {step === 3 && <StepGroup data={data} update={update} />}
         {step === 4 && <StepInterests data={data} update={update} />}
         {step === 5 && <StepFood data={data} update={update} />}
+        {step === 6 && <StepNotes data={data} update={update} />}
       </main>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 safe-pb">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-6" style={{ paddingTop: '1rem', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}>
         {step < STEPS.length - 1 ? (
           <Button
             className="w-full bg-sky-500 hover:bg-sky-600 rounded-2xl h-12 text-base font-semibold gap-2"
@@ -156,6 +161,7 @@ function StepDestination({ data, update }: { data: WizardData; update: (p: Parti
           value={data.destination}
           onChange={e => update({ destination: e.target.value })}
           className="mt-1 h-12 text-base rounded-xl"
+          autoComplete="off"
           autoFocus
         />
       </div>
@@ -370,6 +376,24 @@ function StepInterests({ data, update }: { data: WizardData; update: (p: Partial
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function StepNotes({ data, update }: { data: WizardData; update: (p: Partial<WizardData>) => void }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Tell us about any fixed plans, booked events, or special requests. The AI will schedule everything else around them.
+      </p>
+      <textarea
+        className="w-full min-h-[180px] px-4 py-3 rounded-2xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        placeholder={"Monday 6pm — Bruno Mars concert at the O2\nTuesday morning — free, no plans\nWe want at least one fancy dinner\nAvoid very touristy spots"}
+        value={data.notes}
+        onChange={e => update({ notes: e.target.value })}
+        autoFocus
+      />
+      <p className="text-xs text-muted-foreground">Optional — skip if you have no fixed commitments.</p>
     </div>
   )
 }

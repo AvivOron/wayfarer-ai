@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +29,7 @@ interface EditData {
   interests: string[]
   foodPreferences: string[]
   dietaryRestrictions: string[]
+  notes: string
 }
 
 const STEPS = [
@@ -38,6 +39,7 @@ const STEPS = [
   { title: 'Group', subtitle: 'Who\'s coming?' },
   { title: 'Interests', subtitle: 'What do you love to do?' },
   { title: 'Food & dining', subtitle: 'Let us find the perfect spots' },
+  { title: 'Anything else?', subtitle: 'Fixed plans or special requests' },
 ]
 
 export function TripEditSheet({ trip, onClose, onSaved }: Props) {
@@ -56,6 +58,7 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
     interests: trip.interests,
     foodPreferences: trip.foodPreferences ?? [],
     dietaryRestrictions: trip.dietaryRestrictions ?? [],
+    notes: trip.notes ?? '',
   })
 
   function update(patch: Partial<EditData>) {
@@ -69,6 +72,7 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
     if (step === 3) return data.groupSize >= 1
     if (step === 4) return data.interests.length > 0
     if (step === 5) return true
+    if (step === 6) return true
     return false
   }
 
@@ -83,6 +87,7 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
           title: data.title.trim() || `${data.destination} Trip`,
           startDate: new Date(data.startDate).toISOString(),
           endDate: new Date(data.endDate).toISOString(),
+          notes: data.notes.trim() || null,
         }),
       })
       if (!res.ok) throw new Error()
@@ -99,7 +104,7 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
 
   return (
     <Sheet open onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="rounded-t-3xl h-[92vh] flex flex-col p-0">
+      <SheetContent side="bottom" className="rounded-t-3xl h-[92vh] flex flex-col p-0" showCloseButton={false}>
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
           <Button
@@ -139,10 +144,11 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
           {step === 3 && <StepGroup data={data} update={update} />}
           {step === 4 && <StepInterests data={data} update={update} />}
           {step === 5 && <StepFood data={data} update={update} />}
+          {step === 6 && <StepNotes data={data} update={update} />}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border shrink-0 safe-pb">
+        <div className="px-6 pt-4 border-t border-border shrink-0" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
           {step < STEPS.length - 1 ? (
             <Button
               className="w-full bg-sky-500 hover:bg-sky-600 rounded-2xl h-12 text-base font-semibold gap-2"
@@ -178,6 +184,7 @@ function StepDestination({ data, update }: { data: EditData; update: (p: Partial
           value={data.destination}
           onChange={e => update({ destination: e.target.value })}
           className="mt-1 h-12 text-base rounded-xl"
+          autoComplete="off"
           autoFocus
         />
       </div>
@@ -458,6 +465,24 @@ function StepFood({ data, update }: { data: EditData; update: (p: Partial<EditDa
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+function StepNotes({ data, update }: { data: EditData; update: (p: Partial<EditData>) => void }) {
+  return (
+    <div className="space-y-4 mt-4">
+      <p className="text-sm text-muted-foreground">
+        Fixed plans, booked events, or special requests. The AI will schedule everything else around them.
+      </p>
+      <textarea
+        className="w-full min-h-[180px] px-4 py-3 rounded-2xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        placeholder={"Monday 6pm — Bruno Mars concert at the O2\nTuesday morning — free, no plans\nWe want at least one fancy dinner"}
+        value={data.notes}
+        onChange={e => update({ notes: e.target.value })}
+        autoFocus
+      />
+      <p className="text-xs text-muted-foreground">Optional — leave blank if no fixed commitments.</p>
     </div>
   )
 }

@@ -53,6 +53,7 @@ export interface ScheduleContext {
   foodPreferences?: string[]
   dietaryRestrictions?: string[]
   mustSee: { name: string; address: string; category: string }[]
+  notes?: string
 }
 
 export interface ScheduledActivity {
@@ -131,6 +132,7 @@ export function buildSchedulePrompt(ctx: ScheduleContext): string {
 
   const foodNote = ctx.foodPreferences?.length ? `\n- Food preferences: ${ctx.foodPreferences.join(', ')}` : ''
   const dietNote = ctx.dietaryRestrictions?.length ? `\n- Dietary restrictions: ${ctx.dietaryRestrictions.join(', ')} — strictly required for all meal suggestions` : ''
+  const notesNote = ctx.notes?.trim() ? `\n\nIMPORTANT — fixed commitments from the traveller (must be scheduled exactly as specified):\n${ctx.notes.trim()}` : ''
 
   return `You are a world-class trip planner for ${ctx.destination}.
 
@@ -141,7 +143,7 @@ Trip details:
 - Group: ${ctx.groupSize} ${ctx.groupType} ${kidsNote}
 - Interests: ${ctx.interests.join(', ')}${foodNote}${dietNote}
 - Must-see spots saved by user:
-${ctx.mustSee.map((s, i) => `  ${i + 1}. ${s.name} (${s.category}) - ${s.address}`).join('\n')}
+${ctx.mustSee.map((s, i) => `  ${i + 1}. ${s.name} (${s.category}) - ${s.address}`).join('\n')}${notesNote}
 
 Create an optimized day-by-day itinerary. Rules:
 - Cluster geographically nearby spots on the same day to minimize travel

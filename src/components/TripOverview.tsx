@@ -235,7 +235,7 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
         {tripStarted && (
           <div className="relative overflow-hidden bg-gradient-to-br from-green-500/10 via-green-400/5 to-transparent border border-green-500/20 rounded-2xl p-5 text-center">
             <p className="text-4xl mb-1">✈️</p>
-            <p className="text-lg font-bold text-green-500">You're on this trip!</p>
+            <p className="text-lg font-bold text-green-500">You&apos;re on this trip!</p>
             <p className="text-sm text-muted-foreground mt-1">Enjoy {trip.destination.split(',')[0]}</p>
           </div>
         )}
