@@ -25,11 +25,6 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       allowDangerousEmailAccountLinking: true,
-      authorization: {
-        params: {
-          redirect_uri: `${process.env.NEXTAUTH_URL}/callback/google`,
-        },
-      },
     }),
   ],
   session: { strategy: 'jwt' },
