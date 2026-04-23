@@ -97,12 +97,14 @@ User context:
 - Already visited today: ${ctx.visitedToday.length > 0 ? ctx.visitedToday.join(', ') : 'nothing yet'}
 
 Rules:
-- Only suggest places that are currently open
+- Only suggest real, permanently established, well-known places that you are highly confident exist and are operating in ${ctx.destination} — never fabricate or guess place names
+- Only suggest places that are currently open based on the local time
 - Do NOT suggest outdoor parks or exposed activities if it is raining
 - Prioritize indoor activities if there are young children (under 6) in the evening (after 5pm)
 - Avoid places the user already visited today
 - Prefer places within ${ctx.transport === 'walking' ? '15' : '30'} minutes travel time
 - For restaurant/cafe/bar suggestions, strictly respect dietary restrictions${ctx.dietaryRestrictions?.length ? ` (${ctx.dietaryRestrictions.join(', ')})` : ''} — never suggest venues that cannot accommodate them
+- If you are not certain a place exists and is open, omit it and suggest a safer well-known alternative
 
 Return a JSON object with exactly this structure:
 {

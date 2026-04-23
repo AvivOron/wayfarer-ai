@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -75,9 +75,8 @@ function getDestinationPhoto(destination: string): string {
   const partialKey = Object.keys(DESTINATION_PHOTOS).find(k => key.includes(k) || k.includes(key.split(',')[0].trim()))
   if (partialKey) return `https://images.unsplash.com/${DESTINATION_PHOTOS[partialKey]}?auto=format&fit=crop&w=1200&q=90`
 
-  // Fallback: Unsplash Source API with destination as search term
-  const search = encodeURIComponent(destination.split(',')[0].trim() + ' city travel')
-  return `https://source.unsplash.com/800x400/?${search}`
+  // Fallback: generic travel photo (source.unsplash.com is deprecated and unreliable)
+  return `https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=90`
 }
 
 interface Props {
@@ -90,7 +89,8 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
   const [trip, setTrip] = useState(initialTrip)
   const [showEdit, setShowEdit] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const photoUrl = useMemo(() => getDestinationPhoto(trip.destination), [trip.destination])
+  const [photoUrl, setPhotoUrl] = useState(() => getDestinationPhoto(trip.destination))
+  const fallbackPhoto = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=90'
   const nights = differenceInDays(new Date(trip.endDate), new Date(trip.startDate))
   const visited = (trip.activities ?? []).filter(a => a.visited).length
   const total = (trip.activities ?? []).length
@@ -124,6 +124,7 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
           className="object-cover object-center"
           priority
           sizes="100vw"
+          onError={() => setPhotoUrl(fallbackPhoto)}
         />
         {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />

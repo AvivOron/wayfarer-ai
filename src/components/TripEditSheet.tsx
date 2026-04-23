@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DestinationInput } from '@/components/DestinationInput'
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
 import { Trip, INTEREST_OPTIONS, TRANSPORT_OPTIONS, GROUP_TYPE_OPTIONS, FOOD_PREFERENCE_OPTIONS, DIETARY_RESTRICTION_OPTIONS } from '@/types'
 import { toast } from 'sonner'
@@ -178,13 +179,11 @@ function StepDestination({ data, update }: { data: EditData; update: (p: Partial
     <div className="space-y-4 mt-4">
       <div>
         <Label htmlFor="destination">Destination</Label>
-        <Input
+        <DestinationInput
           id="destination"
-          placeholder="e.g. Paris, France"
           value={data.destination}
-          onChange={e => update({ destination: e.target.value })}
-          className="mt-1 h-12 text-base rounded-xl"
-          autoComplete="off"
+          onChange={v => update({ destination: v })}
+          className="mt-1"
           autoFocus
         />
       </div>
