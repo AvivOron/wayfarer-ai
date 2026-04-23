@@ -20,7 +20,7 @@ export function MemorySheet({ activity, emojis, onSave, onClose }: Props) {
 
   return (
     <Sheet open onOpenChange={open => !open && onClose()}>
-      <SheetContent side="bottom" className="rounded-t-3xl">
+      <SheetContent side="bottom" className="rounded-t-3xl px-6 pb-safe-or-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
         <SheetHeader className="text-left mb-4">
           <SheetTitle>Add a memory ✨</SheetTitle>
           <p className="text-sm text-muted-foreground">{activity.name}</p>

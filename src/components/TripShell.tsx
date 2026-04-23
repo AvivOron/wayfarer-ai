@@ -7,10 +7,11 @@ import { PlannerClient } from '@/components/PlannerClient'
 import { ItineraryClient } from '@/components/ItineraryClient'
 import { LiveModeClient } from '@/components/LiveModeClient'
 import { PackingListSheet } from '@/components/PackingListSheet'
-import { Home, Map, Zap, CalendarDays, Package } from 'lucide-react'
+import { LocalTipsTab } from '@/components/LocalTipsTab'
+import { Home, Map, Zap, CalendarDays, Package, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Tab = 'overview' | 'planner' | 'packing' | 'itinerary' | 'live'
+type Tab = 'overview' | 'planner' | 'packing' | 'itinerary' | 'live' | 'tips'
 
 interface Props {
   trip: Trip
@@ -19,6 +20,7 @@ interface Props {
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'overview', label: 'Overview', icon: Home },
   { id: 'planner', label: 'Planner', icon: Map },
+  { id: 'tips', label: 'Tips', icon: Lightbulb },
   { id: 'packing', label: 'Packing', icon: Package },
   { id: 'itinerary', label: 'Itinerary', icon: CalendarDays },
   { id: 'live', label: 'Live', icon: Zap },
@@ -32,10 +34,13 @@ export function TripShell({ trip: initialTrip }: Props) {
     <div className="min-h-screen bg-background pb-24">
       {/* Tab content */}
       <div className={tab === 'overview' ? 'block' : 'hidden'}>
-        <TripOverview trip={trip} onTripUpdate={setTrip} onTabSwitch={t => setTab(t as Tab)} />
+        <TripOverview trip={trip} onTripUpdate={setTrip} />
       </div>
       <div className={tab === 'planner' ? 'block' : 'hidden'}>
         <PlannerClient trip={trip} />
+      </div>
+      <div className={tab === 'tips' ? 'block' : 'hidden'}>
+        <LocalTipsTab trip={trip} />
       </div>
       <div className={tab === 'packing' ? 'block' : 'hidden'}>
         <PackingListSheet trip={trip} />

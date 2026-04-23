@@ -6,7 +6,7 @@ import { Plus, LogOut, MapPin, CalendarDays, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Trip, TripStatus } from '@/types'
-import { format, isBefore, isWithinInterval } from 'date-fns'
+import { format, isBefore, isWithinInterval, differenceInCalendarDays } from 'date-fns'
 import Image from 'next/image'
 
 interface Props {
@@ -124,6 +124,9 @@ function TripCard({ trip }: { trip: Trip }) {
   const nights = Math.round(
     (new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / 86400000
   )
+  const daysUntil = status === 'planning'
+    ? differenceInCalendarDays(new Date(trip.startDate), new Date())
+    : null
 
   return (
     <Link href={`/trips/${trip.id}`}>
@@ -156,6 +159,12 @@ function TripCard({ trip }: { trip: Trip }) {
             {trip.interests.slice(0, 3).map(i => (
               <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded-full">{i}</span>
             ))}
+          </div>
+        )}
+        {daysUntil !== null && (
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-center gap-1.5">
+            <span className="text-2xl font-black tabular-nums text-sky-500">{daysUntil}</span>
+            <span className="text-xs text-muted-foreground">{daysUntil === 1 ? 'day' : 'days'} to go</span>
           </div>
         )}
       </div>

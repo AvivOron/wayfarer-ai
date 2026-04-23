@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Smile, Trash2 } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Phone, Smile, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Trip, Activity } from '@/types'
 import { format } from 'date-fns'
@@ -200,6 +200,15 @@ function Header({ destination, view, onViewChange }: {
   )
 }
 
+interface PlaceDetail {
+  openNow?: boolean
+  openingHours?: string[]
+  phone?: string
+  website?: string
+  rating?: number
+  priceLevel?: number
+}
+
 function ActivityRow({
   activity, toggling, deleting, onToggle, onMemory, onDelete,
 }: {
@@ -210,8 +219,51 @@ function ActivityRow({
   onMemory: (a: Activity) => void
   onDelete: (id: string) => void
 }) {
+  const [expanded, setExpanded] = useState(false)
+  const [detail, setDetail] = useState<PlaceDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  // Show expand chevron if we have a placeId, or a name+address to search with
+  const canExpand = !!(activity.placeId || (activity.name && activity.address))
+
+  async function toggleExpand() {
+    if (!canExpand) return
+    const next = !expanded
+    setExpanded(next)
+    if (next && !detail) {
+      setDetailLoading(true)
+      try {
+        if (activity.placeId) {
+          const res = await fetch(`/wayfarer-ai/api/places/detail?placeId=${activity.placeId}`)
+          if (res.ok) setDetail(await res.json())
+        } else {
+          // Search by name + address to find the placeId, then fetch details
+          const q = encodeURIComponent(`${activity.name} ${activity.address ?? ''}`.trim())
+          const res = await fetch(`/wayfarer-ai/api/places/search?q=${q}`)
+          if (res.ok) {
+            const data = await res.json()
+            const first = data.results?.[0]
+            if (first?.placeId) {
+              const detailRes = await fetch(`/wayfarer-ai/api/places/detail?placeId=${first.placeId}`)
+              if (detailRes.ok) setDetail(await detailRes.json())
+            }
+          }
+        }
+      } catch { /* silent */ }
+      finally { setDetailLoading(false) }
+    }
+  }
+
+  const mapsUrl = activity.placeId
+    ? `https://www.google.com/maps/place/?q=place_id:${activity.placeId}`
+    : activity.lat && activity.lng
+      ? `https://www.google.com/maps/search/?api=1&query=${activity.lat},${activity.lng}`
+      : activity.address
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.address)}`
+        : null
+
   return (
-    <div className="flex gap-3 pl-0">
+    <div className="flex gap-3 pl-0 min-w-0">
       {/* Timeline dot */}
       <button
         onClick={() => !toggling && onToggle(activity)}
@@ -229,7 +281,7 @@ function ActivityRow({
 
       {/* Card */}
       <div className={cn(
-        'flex-1 bg-card border rounded-2xl p-3 transition-all',
+        'flex-1 min-w-0 bg-card border rounded-2xl p-3 transition-all',
         activity.visited ? 'border-green-200 bg-green-50/50' : 'border-border',
       )}>
         <div className="flex items-start justify-between gap-2">
@@ -238,41 +290,17 @@ function ActivityRow({
               {activity.name}
             </p>
             {activity.address && (
-              <div className="flex items-center gap-1 mt-1">
+              <div className="flex items-center gap-1 mt-1 min-w-0">
                 <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-                {activity.placeId ? (
-                  <a
-                    href={`https://www.google.com/maps/place/?q=place_id:${activity.placeId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-sky-600 hover:underline truncate flex items-center gap-0.5"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    {activity.address}
-                    <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-                  </a>
-                ) : activity.lat && activity.lng ? (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${activity.lat},${activity.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-sky-600 hover:underline truncate flex items-center gap-0.5"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    {activity.address}
+                {mapsUrl ? (
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-sky-600 hover:underline truncate flex items-center gap-0.5 min-w-0"
+                    onClick={e => e.stopPropagation()}>
+                    <span className="truncate">{activity.address}</span>
                     <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                   </a>
                 ) : (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-sky-600 hover:underline truncate flex items-center gap-0.5"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    {activity.address}
-                    <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-                  </a>
+                  <p className="text-xs text-muted-foreground truncate">{activity.address}</p>
                 )}
               </div>
             )}
@@ -296,11 +324,15 @@ function ActivityRow({
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {activity.visited && (
-              <button
-                onClick={() => onMemory(activity)}
-                className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground"
-              >
+              <button onClick={() => onMemory(activity)}
+                className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
                 <Smile className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {canExpand && (
+              <button onClick={toggleExpand}
+                className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
+                <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', expanded && 'rotate-180')} />
               </button>
             )}
             <button
@@ -312,6 +344,78 @@ function ActivityRow({
             </button>
           </div>
         </div>
+
+        {/* Expanded detail panel */}
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-border space-y-2 min-w-0 overflow-hidden">
+            {detailLoading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading details…
+              </div>
+            ) : detail ? (
+              <>
+                {/* Open / closed status */}
+                {detail.openNow !== undefined && (
+                  <div className={cn(
+                    'inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full',
+                    detail.openNow
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
+                  )}>
+                    <span className={cn('w-1.5 h-1.5 rounded-full', detail.openNow ? 'bg-green-500' : 'bg-red-500')} />
+                    {detail.openNow ? 'Open now' : 'Closed now'}
+                  </div>
+                )}
+
+                {/* Today's hours */}
+                {detail.openingHours && detail.openingHours.length > 0 && (() => {
+                  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+                  const todayLine = detail.openingHours.find(h => h.startsWith(today))
+                  return todayLine ? (
+                    <p className="text-xs text-muted-foreground">{todayLine}</p>
+                  ) : null
+                })()}
+
+                {/* Full hours toggle */}
+                {detail.openingHours && detail.openingHours.length > 0 && (
+                  <details className="text-xs text-muted-foreground">
+                    <summary className="cursor-pointer hover:text-foreground select-none">Full hours</summary>
+                    <div className="mt-1.5 space-y-0.5 pl-1">
+                      {detail.openingHours.map((h, i) => <p key={i}>{h}</p>)}
+                    </div>
+                  </details>
+                )}
+
+                {/* Phone */}
+                {detail.phone && (
+                  <a href={`tel:${detail.phone}`}
+                    className="flex items-center gap-1.5 text-xs text-sky-600 hover:underline">
+                    <Phone className="w-3 h-3" /> {detail.phone}
+                  </a>
+                )}
+
+                {/* Website */}
+                {detail.website && (
+                  <a href={detail.website} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-sky-600 hover:underline min-w-0 overflow-hidden">
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{detail.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                  </a>
+                )}
+
+                {/* Rating & price */}
+                {(detail.rating || detail.priceLevel) && (
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {detail.rating && <span>⭐ {detail.rating}</span>}
+                    {detail.priceLevel && <span>{'£'.repeat(detail.priceLevel)}</span>}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">No details available</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

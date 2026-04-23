@@ -15,7 +15,7 @@ const nextConfig = {
     return []
   },
   images: {
-    domains: ['lh3.googleusercontent.com', 'maps.googleapis.com'],
+    domains: ['lh3.googleusercontent.com', 'maps.googleapis.com', 'images.unsplash.com', 'source.unsplash.com'],
   },
 }
 

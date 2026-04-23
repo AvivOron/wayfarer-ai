@@ -80,6 +80,8 @@ model Trip {
   user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities           Activity[]
   packingList          PackingList?
+  localTips            LocalTips?
+  preTripChecklist     PreTripChecklist?
 
   @@index([userId])
 }
@@ -92,6 +94,25 @@ model PackingList {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   trip       Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model LocalTips {
+  id          String   @id @default(cuid())
+  tripId      String   @unique
+  sections    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model PreTripChecklist {
+  id        String   @id @default(cuid())
+  tripId    String   @unique
+  items     Json
+  checked   String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
 }
 
 model Activity {

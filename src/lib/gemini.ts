@@ -305,3 +305,83 @@ Only include "Kids Essentials" if there are children. Be practical and concise.`
   const parsed = JSON.parse(text)
   return parsed.categories
 }
+
+export interface PreTripItem {
+  emoji: string
+  task: string
+  category: string
+}
+
+export async function generatePreTripChecklist(ctx: {
+  destination: string
+  startDate: string
+  transport: string
+  groupType: string
+  childAges: number[]
+}): Promise<PreTripItem[]> {
+  const model = getModel()
+  const prompt = `You are a travel preparation expert. Generate a practical pre-trip to-do checklist for someone travelling to ${ctx.destination} on ${ctx.startDate}.
+Transport to destination: ${ctx.transport}. Group: ${ctx.groupType}${ctx.childAges.length > 0 ? ` with children aged ${ctx.childAges.join(', ')}` : ''}.
+
+Include tasks like: booking transport to airport/station, getting travel insurance, buying an eSIM or local SIM, notifying bank, checking visa requirements, printing/downloading tickets, packing, arranging pet/home care, currency exchange, checking-in online, charging devices, downloading offline maps, etc. Tailor to the destination and group.
+
+Return 12–18 items as JSON:
+{
+  "items": [
+    { "emoji": "📱", "task": "Buy an eSIM for ${ctx.destination}", "category": "Connectivity" },
+    { "emoji": "🛡️", "task": "Purchase travel insurance", "category": "Admin" }
+  ]
+}
+
+Categories should be one of: Admin, Transport, Money, Health, Connectivity, Packing, Home.`
+
+  const result = await model.generateContent(prompt)
+  const parsed = JSON.parse(result.response.text())
+  return parsed.items
+}
+
+export interface LocalTipItem {
+  emoji: string
+  tip: string
+}
+
+export interface LocalTipsSection {
+  title: string
+  items: LocalTipItem[]
+}
+
+export async function generateLocalTips(ctx: {
+  destination: string
+  groupType: string
+  transport: string
+}): Promise<LocalTipsSection[]> {
+  const model = getModel()
+  const prompt = `You are a local knowledge expert. Generate practical insider tips for a traveller visiting ${ctx.destination}.
+Group type: ${ctx.groupType}. Main transport: ${ctx.transport}.
+
+Cover these sections (use exactly these titles):
+- Getting Around
+- Money & Tipping
+- Food & Drink
+- Safety & Health
+- Culture & Etiquette
+- Useful Phrases
+
+Each section should have 3–5 short, specific, actionable tips. Each tip has an emoji and a one-sentence tip.
+
+Return JSON:
+{
+  "sections": [
+    {
+      "title": "Getting Around",
+      "items": [
+        { "emoji": "🚇", "tip": "Buy an Oyster card at any station — single fares are almost double the capped daily price." }
+      ]
+    }
+  ]
+}`
+
+  const result = await model.generateContent(prompt)
+  const parsed = JSON.parse(result.response.text())
+  return parsed.sections
+}
