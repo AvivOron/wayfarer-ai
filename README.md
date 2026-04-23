@@ -6,11 +6,14 @@ Live at [avivo.dev/wayfarer-ai](https://avivo.dev/wayfarer-ai)
 
 ## Features
 
-- **Trip Onboarding** — Multi-step wizard: destination, dates, hotel, group size/type, interests
+- **Trip Onboarding** — Multi-step wizard: destination, dates, accommodation type + address, group size/type, interests, food preferences
+- **Accommodation-aware AI** — Choose hotel, apartment, Airbnb, hostel, or friend's place; the AI adapts the schedule accordingly (no "breakfast at the hotel" when you're staying with friends)
 - **Intelligent Planner** — Search for must-see spots via Google Places, then let Gemini build an optimized day-by-day schedule accounting for opening hours, travel time, and your group
-- **Itinerary View** — Chronological timeline, mark activities as visited, log trip memories with emoji
+- **Itinerary View** — Chronological timeline with inline editing (name, time, duration, notes), mark activities as visited, log trip memories with emoji
 - **Live Mode** — GPS geolocation + "What's Nearby?" sends a context packet (location, time, weather, group, visited spots) to Gemini and returns the 3 best currently-open places
 - **AI Packing List** — Gemini generates a smart packing list per destination, season, and group type
+- **Pre-trip Checklist** — AI-generated checklist tailored to your trip details
+- **Local Tips** — Neighbourhood guides and insider tips powered by Gemini
 - **Weather Forecast** — 7-day forecast via OpenMeteo (free, no key needed) shown on trip overview
 - **PWA** — Installable on iOS/Android via "Add to Home Screen"
 
