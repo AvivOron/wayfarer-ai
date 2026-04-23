@@ -1,7 +1,7 @@
 'use client'
 
 import { signIn, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
 import { MapPin, Compass, Zap, Map } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,12 +16,22 @@ const FEATURES = [
 export function LandingPage() {
   const { status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Use the callbackUrl from the middleware redirect if present, otherwise default to /app.
+  // Always make it absolute so NextAuth doesn't resolve it against the internal Vercel hostname.
+  const rawCallback = searchParams.get('callbackUrl')
+  const callbackUrl = rawCallback
+    ? rawCallback.startsWith('http')
+      ? rawCallback
+      : `${window.location.origin}${rawCallback}`
+    : `${typeof window !== 'undefined' ? window.location.origin : ''}/wayfarer-ai/app`
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/wayfarer-ai/app')
+      router.push(rawCallback ?? '/wayfarer-ai/app')
     }
-  }, [status, router])
+  }, [status, router, rawCallback])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-sand-100 flex flex-col">
@@ -37,7 +47,7 @@ export function LandingPage() {
 
         <Button
           size="lg"
-          onClick={() => signIn('google', { callbackUrl: '/wayfarer-ai/app' })}
+          onClick={() => signIn('google', { callbackUrl })}
           disabled={status === 'loading'}
           className="bg-sky-500 hover:bg-sky-600 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95"
         >
