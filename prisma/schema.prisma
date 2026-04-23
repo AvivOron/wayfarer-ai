@@ -1,0 +1,120 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String?   @unique
+  emailVerified      DateTime?
+  image              String?
+  interests          String[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  accounts           Account[]
+  sessions           Session[]
+  trips              Trip[]
+}
+
+model Trip {
+  id                   String      @id @default(cuid())
+  userId               String
+  title                String
+  destination          String
+  lat                  Float?
+  lng                  Float?
+  startDate            DateTime
+  endDate              DateTime
+  hotelAddress         String?
+  hotelLat             Float?
+  hotelLng             Float?
+  transport            String      @default("public")
+  groupType            String      @default("solo")
+  groupSize            Int         @default(1)
+  childAges            Int[]
+  interests            String[]
+  foodPreferences      String[]
+  dietaryRestrictions  String[]
+  status               String      @default("planning")
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities           Activity[]
+  packingList          PackingList?
+
+  @@index([userId])
+}
+
+model PackingList {
+  id         String   @id @default(cuid())
+  tripId     String   @unique
+  categories Json
+  checked    String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  trip       Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id           String    @id @default(cuid())
+  tripId       String
+  placeId      String?
+  name         String
+  address      String?
+  lat          Float?
+  lng          Float?
+  category     String    @default("attraction")
+  scheduledAt  DateTime?
+  durationMins Int?
+  notes        String?
+  visited      Boolean   @default(false)
+  aiGenerated  Boolean   @default(false)
+  sortOrder    Int       @default(0)
+  memory       String?
+  memoryEmoji  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  trip         Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([tripId, scheduledAt])
+}
