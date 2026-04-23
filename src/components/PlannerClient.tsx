@@ -23,9 +23,10 @@ const AREA_TYPES = new Set(['locality', 'sublocality', 'sublocality_level_1', 's
 
 interface Props {
   trip: Trip
+  onScheduleGenerated?: () => void
 }
 
-export function PlannerClient({ trip }: Props) {
+export function PlannerClient({ trip, onScheduleGenerated }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<PlaceResult[]>([])
   const [areaResults, setAreaResults] = useState<AreaPlace[]>([])
@@ -177,6 +178,7 @@ export function PlannerClient({ trip }: Props) {
           startDate: trip.startDate.split('T')[0],
           endDate: trip.endDate.split('T')[0],
           hotelAddress: trip.hotelAddress ?? trip.destination,
+          accommodationType: trip.accommodationType ?? 'hotel',
           transport: trip.transport,
           groupType: trip.groupType,
           groupSize: trip.groupSize,
@@ -195,9 +197,13 @@ export function PlannerClient({ trip }: Props) {
       const data = await res.json()
       if (!data.schedule) throw new Error('No schedule returned')
 
+      const ACCOMMODATION_NOISE = /return.*hotel|return.*home|return.*accommodation|evening relaxation|relaxation at|unwind.*hotel|unwind.*home|unwind.*friend|check.?in|relax.*hotel|relax.*accommodation|relax.*friend|head back|back to hotel|back to accommodation|at friend.s home|at the hotel/i
+
       // Convert AI schedule to activities and save them
       const aiActivities = (data.schedule as DaySchedule[]).flatMap((day, di) =>
-        day.activities.map((act, ai) => {
+        day.activities
+          .filter(act => !ACCOMMODATION_NOISE.test(act.name))
+          .map((act, ai) => {
           const [hours, mins] = act.time.split(':').map(Number)
           const date = new Date(day.date)
           date.setHours(hours, mins, 0, 0)
@@ -228,11 +234,11 @@ export function PlannerClient({ trip }: Props) {
       })
 
       if (saveRes.ok) {
-        toast.success('Smart schedule generated! 🎉 Check the Itinerary tab.')
-        // Refresh activities
         const refreshRes = await fetch(`/wayfarer-ai/api/trips/${trip.id}/activities`)
         const refreshed = await refreshRes.json()
         setActivities(refreshed)
+        toast.success('Smart schedule generated!')
+        onScheduleGenerated?.()
       }
     } catch (err) {
       console.error(err)
@@ -243,7 +249,6 @@ export function PlannerClient({ trip }: Props) {
   }
 
   const mustSee = activities.filter(a => !a.aiGenerated)
-  const scheduled = activities.filter(a => a.aiGenerated)
 
   return (
     <div>
@@ -375,28 +380,6 @@ export function PlannerClient({ trip }: Props) {
         </Button>
         {mustSee.length === 0 && (
           <p className="text-xs text-center text-muted-foreground -mt-4">Add at least one spot to generate a schedule</p>
-        )}
-
-        {/* AI-scheduled activities */}
-        {scheduled.length > 0 && (
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              AI-Scheduled ({scheduled.length})
-            </h2>
-            <div className="space-y-2">
-              {scheduled.slice(0, 5).map(a => (
-                <div key={a.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-xl opacity-80">
-                  <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{a.name}</p>
-                  </div>
-                </div>
-              ))}
-              {scheduled.length > 5 && (
-                <p className="text-xs text-center text-muted-foreground">+{scheduled.length - 5} more in Itinerary</p>
-              )}
-            </div>
-          </div>
         )}
       </div>
 

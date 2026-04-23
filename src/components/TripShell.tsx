@@ -29,6 +29,22 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 export function TripShell({ trip: initialTrip }: Props) {
   const [tab, setTab] = useState<Tab>('overview')
   const [trip, setTrip] = useState(initialTrip)
+  const [itineraryKey, setItineraryKey] = useState(0)
+
+  function switchTab(id: Tab) {
+    setTab(id)
+    window.scrollTo({ top: 0 })
+  }
+
+  async function handleScheduleGenerated() {
+    const res = await fetch(`/wayfarer-ai/api/trips/${trip.id}`)
+    if (res.ok) {
+      const updated = await res.json()
+      setTrip(updated)
+      setItineraryKey(k => k + 1)
+    }
+    switchTab('itinerary')
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -37,7 +53,7 @@ export function TripShell({ trip: initialTrip }: Props) {
         <TripOverview trip={trip} onTripUpdate={setTrip} />
       </div>
       <div className={tab === 'planner' ? 'block' : 'hidden'}>
-        <PlannerClient trip={trip} />
+        <PlannerClient trip={trip} onScheduleGenerated={handleScheduleGenerated} />
       </div>
       <div className={tab === 'tips' ? 'block' : 'hidden'}>
         <LocalTipsTab trip={trip} />
@@ -46,7 +62,7 @@ export function TripShell({ trip: initialTrip }: Props) {
         <PackingListSheet trip={trip} />
       </div>
       <div className={tab === 'itinerary' ? 'block' : 'hidden'}>
-        <ItineraryClient trip={trip} />
+        <ItineraryClient key={itineraryKey} trip={trip} />
       </div>
       <div className={tab === 'live' ? 'block' : 'hidden'}>
         <LiveModeClient trip={trip} />
@@ -58,7 +74,7 @@ export function TripShell({ trip: initialTrip }: Props) {
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setTab(id)}
+              onClick={() => switchTab(id)}
               className={cn(
                 'flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-colors min-w-[52px]',
                 tab === id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'

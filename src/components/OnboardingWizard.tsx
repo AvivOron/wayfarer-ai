@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DestinationInput } from '@/components/DestinationInput'
 import { Progress } from '@/components/ui/progress'
-import { INTEREST_OPTIONS, TRANSPORT_OPTIONS, GROUP_TYPE_OPTIONS, FOOD_PREFERENCE_OPTIONS, DIETARY_RESTRICTION_OPTIONS } from '@/types'
+import { INTEREST_OPTIONS, TRANSPORT_OPTIONS, GROUP_TYPE_OPTIONS, FOOD_PREFERENCE_OPTIONS, DIETARY_RESTRICTION_OPTIONS, ACCOMMODATION_TYPE_OPTIONS, AccommodationType } from '@/types'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +20,7 @@ interface WizardData {
   startDate: string
   endDate: string
   hotelAddress: string
+  accommodationType: AccommodationType
   transport: string
   groupType: string
   groupSize: number
@@ -52,6 +53,7 @@ export function OnboardingWizard() {
     startDate: '',
     endDate: '',
     hotelAddress: '',
+    accommodationType: 'hotel',
     transport: 'public',
     groupType: 'solo',
     groupSize: 1,
@@ -162,6 +164,7 @@ function StepDestination({ data, update }: { data: WizardData; update: (p: Parti
           onChange={v => update({ destination: v })}
           className="mt-1"
           autoFocus
+          types="(cities)"
         />
       </div>
       <div>
@@ -216,13 +219,32 @@ function StepHotel({ data, update }: { data: WizardData; update: (p: Partial<Wiz
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="hotel">Hotel / accommodation address</Label>
-        <Input
+        <Label className="mb-2 block">Where are you staying?</Label>
+        <div className="grid grid-cols-5 gap-2">
+          {ACCOMMODATION_TYPE_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => update({ accommodationType: opt.value })}
+              className={cn(
+                'flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border-2 transition-all',
+                data.accommodationType === opt.value
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+              )}
+            >
+              <span className="text-2xl">{opt.emoji}</span>
+              <span className="text-[11px] font-medium leading-tight text-center">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="hotel">Address or name</Label>
+        <DestinationInput
           id="hotel"
-          placeholder="e.g. Hotel du Louvre, Paris"
           value={data.hotelAddress}
-          onChange={e => update({ hotelAddress: e.target.value })}
-          className="mt-1 h-12 text-base rounded-xl"
+          onChange={v => update({ hotelAddress: v })}
+          className="mt-1"
         />
         <p className="text-xs text-muted-foreground mt-2">Used to calculate travel times in your itinerary</p>
       </div>

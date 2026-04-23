@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DestinationInput } from '@/components/DestinationInput'
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
-import { Trip, INTEREST_OPTIONS, TRANSPORT_OPTIONS, GROUP_TYPE_OPTIONS, FOOD_PREFERENCE_OPTIONS, DIETARY_RESTRICTION_OPTIONS } from '@/types'
+import { Trip, AccommodationType, INTEREST_OPTIONS, TRANSPORT_OPTIONS, GROUP_TYPE_OPTIONS, FOOD_PREFERENCE_OPTIONS, DIETARY_RESTRICTION_OPTIONS, ACCOMMODATION_TYPE_OPTIONS } from '@/types'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +23,7 @@ interface EditData {
   startDate: string
   endDate: string
   hotelAddress: string
+  accommodationType: AccommodationType
   transport: string
   groupType: string
   groupSize: number
@@ -52,6 +53,7 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
     startDate: trip.startDate.split('T')[0],
     endDate: trip.endDate.split('T')[0],
     hotelAddress: trip.hotelAddress ?? '',
+    accommodationType: (trip.accommodationType ?? 'hotel') as AccommodationType,
     transport: trip.transport,
     groupType: trip.groupType,
     groupSize: trip.groupSize,
@@ -185,6 +187,7 @@ function StepDestination({ data, update }: { data: EditData; update: (p: Partial
           onChange={v => update({ destination: v })}
           className="mt-1"
           autoFocus
+          types="(cities)"
         />
       </div>
       <div>
@@ -240,13 +243,32 @@ function StepHotel({ data, update }: { data: EditData; update: (p: Partial<EditD
   return (
     <div className="space-y-4 mt-4">
       <div>
-        <Label htmlFor="hotel">Hotel / accommodation address</Label>
-        <Input
+        <Label className="mb-2 block">Where are you staying?</Label>
+        <div className="grid grid-cols-5 gap-2">
+          {ACCOMMODATION_TYPE_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => update({ accommodationType: opt.value })}
+              className={cn(
+                'flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border-2 transition-all',
+                data.accommodationType === opt.value
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+              )}
+            >
+              <span className="text-2xl">{opt.emoji}</span>
+              <span className="text-[11px] font-medium leading-tight text-center">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="hotel">Address or name</Label>
+        <DestinationInput
           id="hotel"
-          placeholder="e.g. Hotel du Louvre, Paris"
           value={data.hotelAddress}
-          onChange={e => update({ hotelAddress: e.target.value })}
-          className="mt-1 h-12 text-base rounded-xl"
+          onChange={v => update({ hotelAddress: v })}
+          className="mt-1"
         />
         <p className="text-xs text-muted-foreground mt-2">Used to calculate travel times in your itinerary</p>
       </div>

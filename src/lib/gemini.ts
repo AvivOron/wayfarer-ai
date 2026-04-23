@@ -45,6 +45,7 @@ export interface ScheduleContext {
   startDate: string
   endDate: string
   hotelAddress: string
+  accommodationType?: string
   transport: string
   groupType: string
   groupSize: number
@@ -136,11 +137,25 @@ export function buildSchedulePrompt(ctx: ScheduleContext): string {
   const dietNote = ctx.dietaryRestrictions?.length ? `\n- Dietary restrictions: ${ctx.dietaryRestrictions.join(', ')} — strictly required for all meal suggestions` : ''
   const notesNote = ctx.notes?.trim() ? `\n\nIMPORTANT — fixed commitments from the traveller (must be scheduled exactly as specified):\n${ctx.notes.trim()}` : ''
 
+  const accomType = ctx.accommodationType ?? 'hotel'
+  const accomLabel: Record<string, string> = {
+    hotel: 'hotel',
+    apartment: 'private apartment',
+    airbnb: 'Airbnb',
+    hostel: 'hostel',
+    friends: "friend's home",
+  }
+  const accomNote = accomType === 'friends'
+    ? `\n- Accommodation note: traveller is staying at a friend's home — do NOT schedule "breakfast at accommodation" or hotel-specific activities; traveller makes their own breakfast arrangements`
+    : accomType === 'apartment' || accomType === 'airbnb'
+      ? `\n- Accommodation note: traveller is in a self-catered ${accomLabel[accomType]} — they may make their own breakfast, so only suggest breakfast out if it's a notable local experience`
+      : ''
+
   return `You are a world-class trip planner for ${ctx.destination}.
 
 Trip details:
 - Dates: ${ctx.startDate} to ${ctx.endDate} (${nights} nights)
-- Base hotel: ${ctx.hotelAddress}
+- Base ${accomLabel[accomType]}: ${ctx.hotelAddress}${accomNote}
 - Transport: ${ctx.transport}
 - Group: ${ctx.groupSize} ${ctx.groupType} ${kidsNote}
 - Interests: ${ctx.interests.join(', ')}${foodNote}${dietNote}
@@ -151,7 +166,8 @@ Create an optimized day-by-day itinerary. Rules:
 - Cluster geographically nearby spots on the same day to minimize travel
 - Account for typical opening hours (museums often close Mon, many restaurants close between 3-6pm)
 - Insert meal breaks (breakfast ~8am, lunch ~12:30pm, dinner ~7pm)
-- Start each day from the hotel, end near the hotel
+- Start each day from the base accommodation, end near it
+- NEVER include activities like "return to hotel", "evening relaxation at accommodation", "check in", "unwind at hotel", or any activity whose purpose is simply going back to the accommodation — these are implied and add no value
 - Consider child-friendliness if there are young children
 - Keep a realistic pace — max 4-5 activities per day
 

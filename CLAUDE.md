@@ -25,7 +25,7 @@ npm run db:generate  # Regenerate Prisma client after schema changes
 
 **AI:** Gemini 1.5 Pro via `@google/generative-ai`. All prompt builders are in `src/lib/gemini.ts`. Responses use `responseMimeType: 'application/json'` for structured output — always parse with `JSON.parse(result.response.text())`.
 
-**Google Places:** Server-side proxy at `/api/places/search` to keep `GOOGLE_MAPS_API_KEY` off the client.
+**Google Places:** Server-side proxy at `/api/places/search` to keep `GOOGLE_MAPS_API_KEY` off the client. Autocomplete at `/api/places/autocomplete` accepts an optional `types` param (e.g. `(cities)`) — omit for general address/hotel search.
 
 **Weather:** OpenMeteo at `/api/weather` — free, no API key, takes `lat`, `lng`, `startDate`, `endDate`.
 
@@ -39,7 +39,7 @@ npm run db:generate  # Regenerate Prisma client after schema changes
 | `src/lib/places.ts` | Google Places API helpers (search, detail, photo URL) |
 | `src/lib/prisma.ts` | Prisma singleton with NeonDB adapter |
 | `src/middleware.ts` | JWT route guard — update `matcher` if adding new protected routes |
-| `src/types/index.ts` | Shared TypeScript types + INTEREST_OPTIONS, TRANSPORT_OPTIONS constants |
+| `src/types/index.ts` | Shared TypeScript types + INTEREST_OPTIONS, TRANSPORT_OPTIONS, ACCOMMODATION_TYPE_OPTIONS constants |
 | `prisma/schema.prisma` | DB schema — User, Trip, Activity models |
 | `prisma.config.ts` | Prisma v7 config with adapter (CLI only, excluded from tsc) |
 

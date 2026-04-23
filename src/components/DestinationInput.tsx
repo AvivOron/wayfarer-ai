@@ -10,9 +10,10 @@ interface Props {
   className?: string
   id?: string
   autoFocus?: boolean
+  types?: string
 }
 
-export function DestinationInput({ value, onChange, className, id, autoFocus }: Props) {
+export function DestinationInput({ value, onChange, className, id, autoFocus, types }: Props) {
   const [predictions, setPredictions] = useState<string[]>([])
   const [open, setOpen] = useState(false)
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -34,7 +35,9 @@ export function DestinationInput({ value, onChange, className, id, autoFocus }: 
     if (input.length < 2) { setPredictions([]); setOpen(false); return }
     debounce.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/wayfarer-ai/api/places/autocomplete?input=${encodeURIComponent(input)}`)
+        const params = new URLSearchParams({ input })
+        if (types) params.set('types', types)
+        const res = await fetch(`/wayfarer-ai/api/places/autocomplete?${params}`)
         const data = await res.json()
         setPredictions(data.predictions ?? [])
         setOpen((data.predictions ?? []).length > 0)

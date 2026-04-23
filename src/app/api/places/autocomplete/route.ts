@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
 
   const url = new URL('https://maps.googleapis.com/maps/api/place/autocomplete/json')
   url.searchParams.set('input', input)
-  url.searchParams.set('types', '(cities)')
+  const types = req.nextUrl.searchParams.get('types')
+  if (types) url.searchParams.set('types', types)
   url.searchParams.set('key', process.env.GOOGLE_MAPS_API_KEY!)
 
   const res = await fetch(url.toString())

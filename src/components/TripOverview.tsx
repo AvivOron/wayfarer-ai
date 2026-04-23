@@ -252,41 +252,6 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
         {!tripEnded && (
           <PreTripChecklist trip={trip} />
         )}
-
-        {/* Interests */}
-        {trip.interests.length > 0 && (
-          <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Interests</h2>
-            <div className="flex flex-wrap gap-2">
-              {trip.interests.map(i => (
-                <Badge key={i} variant="secondary" className="rounded-full">{i}</Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recent activities preview */}
-        {total > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Activities</h2>
-              <Link href={`/trips/${trip.id}/itinerary`} className="text-xs text-primary">View all</Link>
-            </div>
-            <div className="space-y-2">
-              {(trip.activities ?? []).slice(0, 3).map(a => (
-                <div key={a.id} className="flex items-center gap-3 p-3 bg-card border border-border rounded-xl">
-                  <div className={`w-2 h-2 rounded-full ${a.visited ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{a.name}</p>
-                    {a.scheduledAt && (
-                      <p className="text-xs text-muted-foreground">{format(new Date(a.scheduledAt), 'MMM d, HH:mm')}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {showEdit && (

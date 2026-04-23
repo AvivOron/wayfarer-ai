@@ -67,6 +67,7 @@ model Trip {
   hotelAddress         String?
   hotelLat             Float?
   hotelLng             Float?
+  accommodationType    String?
   transport            String      @default("public")
   groupType            String      @default("solo")
   groupSize            Int         @default(1)

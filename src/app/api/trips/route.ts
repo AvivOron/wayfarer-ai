@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const {
     title, destination, lat, lng, startDate, endDate,
-    hotelAddress, hotelLat, hotelLng, transport, groupType,
+    hotelAddress, hotelLat, hotelLng, accommodationType, transport, groupType,
     groupSize, childAges, interests, foodPreferences, dietaryRestrictions,
   } = body
 
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       hotelAddress,
       hotelLat,
       hotelLng,
+      accommodationType: accommodationType ?? 'hotel',
       transport: transport ?? 'public',
       groupType: groupType ?? 'solo',
       groupSize: groupSize ?? 1,

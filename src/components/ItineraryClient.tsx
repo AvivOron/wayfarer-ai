@@ -2,8 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Phone, Smile, Trash2 } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Smile, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Trip, Activity } from '@/types'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -48,6 +51,7 @@ export function ItineraryClient({ trip }: Props) {
   const [view, setView] = useState<'list' | 'map'>('list')
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editActivity, setEditActivity] = useState<Activity | null>(null)
 
   const grouped = groupByDay(activities)
   async function toggleVisited(activity: Activity) {
@@ -80,6 +84,20 @@ export function ItineraryClient({ trip }: Props) {
       toast.success('Memory saved! ✨')
     }
     setMemoryActivity(null)
+  }
+
+  async function saveEdit(activityId: string, patch: { name: string; scheduledAt: string | null; durationMins: number | null; notes: string | null }) {
+    const res = await fetch(`/wayfarer-ai/api/trips/${trip.id}/activities`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activityId, ...patch }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setActivities(a => a.map(x => x.id === activityId ? updated : x))
+      toast.success('Activity updated')
+    }
+    setEditActivity(null)
   }
 
   async function deleteActivity(id: string) {
@@ -143,6 +161,7 @@ export function ItineraryClient({ trip }: Props) {
                     onToggle={toggleVisited}
                     onMemory={setMemoryActivity}
                     onDelete={deleteActivity}
+                    onEdit={setEditActivity}
                   />
                 ))}
               </div>
@@ -160,7 +179,75 @@ export function ItineraryClient({ trip }: Props) {
           onClose={() => setMemoryActivity(null)}
         />
       )}
+      {editActivity && (
+        <EditActivitySheet
+          activity={editActivity}
+          onSave={saveEdit}
+          onClose={() => setEditActivity(null)}
+        />
+      )}
     </div>
+  )
+}
+
+function EditActivitySheet({ activity, onSave, onClose }: {
+  activity: Activity
+  onSave: (id: string, patch: { name: string; scheduledAt: string | null; durationMins: number | null; notes: string | null }) => void
+  onClose: () => void
+}) {
+  const [name, setName] = useState(activity.name)
+  const [time, setTime] = useState(activity.scheduledAt ? format(new Date(activity.scheduledAt), 'HH:mm') : '')
+  const [duration, setDuration] = useState(activity.durationMins?.toString() ?? '')
+  const [notes, setNotes] = useState(activity.notes ?? '')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    let scheduledAt = activity.scheduledAt
+    if (time && activity.scheduledAt) {
+      const [h, m] = time.split(':').map(Number)
+      const d = new Date(activity.scheduledAt)
+      d.setHours(h, m, 0, 0)
+      scheduledAt = d.toISOString()
+    }
+    await onSave(activity.id, {
+      name: name.trim() || activity.name,
+      scheduledAt,
+      durationMins: duration ? parseInt(duration) : null,
+      notes: notes.trim() || null,
+    })
+    setSaving(false)
+  }
+
+  return (
+    <Sheet open onOpenChange={open => !open && onClose()}>
+      <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8 pt-4 space-y-4">
+        <SheetTitle>Edit activity</SheetTitle>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="ea-name">Name</Label>
+            <Input id="ea-name" value={name} onChange={e => setName(e.target.value)} className="mt-1 h-11 rounded-xl" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="ea-time">Time</Label>
+              <Input id="ea-time" type="time" value={time} onChange={e => setTime(e.target.value)} className="mt-1 h-11 rounded-xl" />
+            </div>
+            <div>
+              <Label htmlFor="ea-dur">Duration (min)</Label>
+              <Input id="ea-dur" type="number" min={0} value={duration} onChange={e => setDuration(e.target.value)} className="mt-1 h-11 rounded-xl" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="ea-notes">Notes</Label>
+            <Input id="ea-notes" value={notes} onChange={e => setNotes(e.target.value)} className="mt-1 h-11 rounded-xl" />
+          </div>
+        </div>
+        <Button onClick={handleSave} disabled={saving} className="w-full h-11 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+        </Button>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -210,7 +297,7 @@ interface PlaceDetail {
 }
 
 function ActivityRow({
-  activity, toggling, deleting, onToggle, onMemory, onDelete,
+  activity, toggling, deleting, onToggle, onMemory, onDelete, onEdit,
 }: {
   activity: Activity
   toggling: boolean
@@ -218,6 +305,7 @@ function ActivityRow({
   onToggle: (a: Activity) => void
   onMemory: (a: Activity) => void
   onDelete: (id: string) => void
+  onEdit: (a: Activity) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const [detail, setDetail] = useState<PlaceDetail | null>(null)
@@ -309,7 +397,7 @@ function ActivityRow({
                 <Clock className="w-3 h-3 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(activity.scheduledAt), 'HH:mm')}
-                  {activity.durationMins && ` · ${activity.durationMins} min`}
+                  {!!activity.durationMins && ` · ${activity.durationMins} min`}
                 </p>
               </div>
             )}
@@ -329,6 +417,10 @@ function ActivityRow({
                 <Smile className="w-3.5 h-3.5" />
               </button>
             )}
+            <button onClick={() => onEdit(activity)}
+              className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
             {canExpand && (
               <button onClick={toggleExpand}
                 className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">

@@ -2,6 +2,15 @@ export type TransportMode = 'car' | 'public' | 'walking'
 export type GroupType = 'solo' | 'couple' | 'family' | 'friends'
 export type TripStatus = 'planning' | 'active' | 'completed'
 export type ActivityCategory = 'attraction' | 'restaurant' | 'cafe' | 'museum' | 'park' | 'hotel' | 'transport' | 'other'
+export type AccommodationType = 'hotel' | 'apartment' | 'hostel' | 'friends' | 'airbnb'
+
+export const ACCOMMODATION_TYPE_OPTIONS: { value: AccommodationType; label: string; emoji: string }[] = [
+  { value: 'hotel', label: 'Hotel', emoji: '🏨' },
+  { value: 'apartment', label: 'Apartment', emoji: '🏠' },
+  { value: 'airbnb', label: 'Airbnb', emoji: '🛋️' },
+  { value: 'hostel', label: 'Hostel', emoji: '🛏️' },
+  { value: 'friends', label: "Friend's place", emoji: '🤝' },
+]
 
 export const FOOD_PREFERENCE_OPTIONS = [
   { value: 'local_cuisine', label: 'Local Cuisine', emoji: '🍽️' },
@@ -65,6 +74,7 @@ export interface Trip {
   hotelAddress: string | null
   hotelLat: number | null
   hotelLng: number | null
+  accommodationType: AccommodationType | null
   transport: TransportMode
   groupType: GroupType
   groupSize: number
