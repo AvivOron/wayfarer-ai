@@ -14,6 +14,63 @@ interface Props {
   user: { name?: string | null; image?: string | null; email?: string | null }
 }
 
+const DESTINATION_EMOJIS: Record<string, string> = {
+  'eilat':         '🐬',
+  'london':        '💂‍♂️',
+  'paris':         '🗼',
+  'new york':      '🗽',
+  'tokyo':         '⛩️',
+  'amsterdam':     '🚲',
+  'barcelona':     '🏖️',
+  'rome':          '🏛️',
+  'dubai':         '🏙️',
+  'singapore':     '🦁',
+  'sydney':        '🦘',
+  'los angeles':   '🎬',
+  'miami':         '🌴',
+  'san francisco': '🌉',
+  'chicago':       '🌬️',
+  'berlin':        '🐻',
+  'madrid':        '💃',
+  'lisbon':        '🍊',
+  'prague':        '🏰',
+  'vienna':        '🎻',
+  'budapest':      '🌊',
+  'athens':        '🏛️',
+  'istanbul':      '🕌',
+  'bangkok':       '🛺',
+  'bali':          '🌺',
+  'hong kong':     '🏮',
+  'seoul':         '🎎',
+  'beijing':       '🐉',
+  'tel aviv':      '🌊',
+  'jerusalem':     '🕍',
+  'cairo':         '🐫',
+  'cape town':     '🦁',
+  'toronto':       '🍁',
+  'mexico city':   '🌮',
+  'rio de janeiro':'🎭',
+  'buenos aires':  '🥩',
+  'edinburgh':     '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'florence':      '🎨',
+  'venice':        '🚤',
+  'amalfi':        '🍋',
+  'santorini':     '🫐',
+  'maldives':      '🐠',
+  'kyoto':         '🌸',
+  'osaka':         '🍜',
+  'tuscany':       '🍷',
+  'alps':          '⛷️',
+}
+
+function getDestinationEmoji(destination: string): string | null {
+  const key = destination.toLowerCase().trim()
+  const exact = DESTINATION_EMOJIS[key]
+  if (exact) return exact
+  const partial = Object.keys(DESTINATION_EMOJIS).find(k => key.includes(k) || k.includes(key.split(',')[0].trim()))
+  return partial ? DESTINATION_EMOJIS[partial] : null
+}
+
 const STATUS_COLORS: Record<TripStatus, string> = {
   planning: 'bg-sky-100 text-sky-700',
   active: 'bg-green-100 text-green-700',
@@ -133,7 +190,7 @@ function TripCard({ trip }: { trip: Trip }) {
       <div className="bg-card border border-border rounded-2xl p-4 hover:border-primary/50 transition-all hover:shadow-md active:scale-[0.99]">
         <div className="flex items-start justify-between mb-2">
           <div>
-            <h3 className="font-semibold text-base">{trip.title}</h3>
+            <h3 className="font-semibold text-base">{getDestinationEmoji(trip.destination)} {trip.title}</h3>
             <div className="flex items-center gap-1 text-muted-foreground text-sm">
               <MapPin className="w-3 h-3" />
               {trip.destination}
