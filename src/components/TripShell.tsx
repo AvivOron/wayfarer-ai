@@ -47,7 +47,7 @@ export function TripShell({ trip: initialTrip }: Props) {
   }
 
   return (
-    <div className={cn('bg-background', tab === 'itinerary' ? 'h-screen overflow-hidden' : 'min-h-screen pb-24')}>
+    <div className="min-h-screen bg-background pb-24">
       {/* Tab content */}
       <div className={tab === 'overview' ? 'block' : 'hidden'}>
         <TripOverview trip={trip} onTripUpdate={setTrip} />

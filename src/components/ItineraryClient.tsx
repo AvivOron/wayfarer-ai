@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Share2, Smile, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -94,6 +94,17 @@ export function ItineraryClient({ trip }: Props) {
   const [activities, setActivities] = useState<Activity[]>(trip.activities ?? [])
   const [memoryActivity, setMemoryActivity] = useState<Activity | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
+
+  useEffect(() => {
+    if (view === 'map') {
+      window.scrollTo({ top: 0 })
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [view])
+
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
