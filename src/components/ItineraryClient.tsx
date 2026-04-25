@@ -105,6 +105,10 @@ export function ItineraryClient({ trip }: Props) {
     return () => { document.body.style.overflow = '' }
   }, [view])
 
+  useEffect(() => {
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
