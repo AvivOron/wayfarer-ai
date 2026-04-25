@@ -17,6 +17,8 @@ npm run db:generate  # Regenerate Prisma client after schema changes
 
 **Auth:** NextAuth v4 with JWT strategy. Session cookie is `wayfarer.session-token` (dev) / `__Secure-wayfarer.session-token` (prod). The middleware at `src/middleware.ts` guards `/wayfarer-ai/app/**`, `/wayfarer-ai/trips/**`, and `/wayfarer-ai/api/trips/**` + `/wayfarer-ai/api/ai/**`.
 
+**After any schema change:** always run `npm run db:push` **and** `npm run db:generate` — then restart the dev server. The running server caches the old Prisma client and will throw `Unknown argument` errors until it picks up the regenerated client. This project has no migrations folder and uses `db:push` exclusively — do NOT run `db:migrate` as it will report drift and prompt to reset the database.
+
 **Database:** Prisma v7 + NeonDB via `@prisma/adapter-neon`. Key differences from older Prisma:
 - No `url` in `prisma/schema.prisma` datasource — connection is in `prisma.config.ts`
 - `src/lib/prisma.ts` uses `PrismaNeon({ connectionString })` (takes a config object, not a Pool instance)

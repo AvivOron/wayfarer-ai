@@ -75,6 +75,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         scheduledAt: a.scheduledAt ? new Date(a.scheduledAt) : null,
         durationMins: a.durationMins ?? null,
         notes: a.notes ?? null,
+        groupLabel: a.groupLabel ?? null,
         aiGenerated: a.aiGenerated ?? false,
         sortOrder: a.sortOrder ?? i,
       })),

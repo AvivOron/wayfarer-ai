@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Loader2, Package, CheckSquare, Square, Pencil, Plus, Trash2, X, Check } from 'lucide-react'
+import { Loader2, Package, CheckSquare, Square, Pencil, Plus, Trash2, X, Check, ArrowLeft } from 'lucide-react'
 import { Trip } from '@/types'
 import { toast } from 'sonner'
 
@@ -21,6 +22,7 @@ export function PackingListSheet({ trip }: Props) {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [generated, setGenerated] = useState(false)
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false)
   const [editingItem, setEditingItem] = useState<{ catIdx: number; itemIdx: number } | null>(null)
   const [editValue, setEditValue] = useState('')
   const [addingTo, setAddingTo] = useState<number | null>(null)
@@ -171,11 +173,16 @@ export function PackingListSheet({ trip }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3">
-        <h1 className="font-semibold flex items-center gap-2">
-          <Package className="w-4 h-4" /> Packing List
-        </h1>
-        <p className="text-xs text-muted-foreground">{trip.destination} · auto-saved</p>
+      <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="font-semibold flex items-center gap-2">
+            <Package className="w-4 h-4" /> Packing List
+          </h1>
+          <p className="text-xs text-muted-foreground">{trip.destination} · auto-saved</p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-6">
@@ -292,7 +299,7 @@ export function PackingListSheet({ trip }: Props) {
             ))}
 
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1 rounded-2xl" onClick={generate} disabled={loading}>
+              <Button variant="outline" className="flex-1 rounded-2xl" onClick={() => setConfirmRegenerate(true)} disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Regenerate ✨'}
               </Button>
               <Button variant="ghost" size="icon" className="rounded-2xl text-muted-foreground hover:text-destructive" onClick={clearList} title="Clear list">
@@ -302,6 +309,20 @@ export function PackingListSheet({ trip }: Props) {
           </div>
         )}
       </div>
+
+      {confirmRegenerate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmRegenerate(false)} />
+          <div className="relative bg-card rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4">
+            <h2 className="font-semibold text-base">Regenerate packing list?</h2>
+            <p className="text-sm text-muted-foreground">This will replace your current list, including any items you&apos;ve added or checked off.</p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setConfirmRegenerate(false)}>Cancel</Button>
+              <Button className="flex-1 bg-sky-500 hover:bg-sky-600 text-white" onClick={() => { setConfirmRegenerate(false); generate() }}>Regenerate</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

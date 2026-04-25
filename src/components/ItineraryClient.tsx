@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Share2, Smile, Trash2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Share2, Smile, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,11 @@ interface Props {
 }
 
 type GroupedDay = { date: Date; activities: Activity[] }
+
+const DAY_COLORS = [
+  '#0ea5e9', '#f97316', '#8b5cf6', '#10b981',
+  '#ef4444', '#f59e0b', '#ec4899', '#14b8a6',
+]
 
 const CATEGORY_EMOJI: Record<string, string> = {
   attraction: '🏯',
@@ -68,12 +73,7 @@ function buildTripShareText(trip: Trip, grouped: GroupedDay[]): string {
 function groupByDay(activities: Activity[]): GroupedDay[] {
   const map = new Map<string, Activity[]>()
   for (const a of activities) {
-    if (!a.scheduledAt) {
-      const key = 'unscheduled'
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(a)
-      continue
-    }
+    if (!a.scheduledAt) continue
     const key = new Date(a.scheduledAt).toDateString()
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(a)
@@ -99,8 +99,10 @@ export function ItineraryClient({ trip }: Props) {
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   const grouped = groupByDay(activities)
+  const visibleDays = selectedDay === null ? grouped : grouped.filter((_, i) => i === selectedDay)
   async function toggleVisited(activity: Activity) {
     setTogglingId(activity.id)
     const res = await fetch(`/wayfarer-ai/api/trips/${trip.id}/activities`, {
@@ -180,8 +182,28 @@ export function ItineraryClient({ trip }: Props) {
           <ItineraryMap activities={activities} tripDestination={trip.destination} />
         </div>
       ) : (
-      <div className="px-4 py-6 space-y-8">
-        {grouped.map((day, di) => (
+      <div className="py-6 space-y-8">
+        {/* Day pills */}
+        <div className="flex gap-2 px-4 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setSelectedDay(null)}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${selectedDay === null ? 'bg-primary text-white border-transparent' : 'border-border text-muted-foreground bg-card hover:border-primary/50'}`}
+          >
+            All
+          </button>
+          {grouped.map((day, i) => (
+            <button
+              key={i}
+              onClick={() => setSelectedDay(selectedDay === i ? null : i)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${selectedDay === i ? 'text-white border-transparent' : 'border-border text-muted-foreground bg-card hover:border-primary/50'}`}
+              style={selectedDay === i ? { backgroundColor: DAY_COLORS[i % DAY_COLORS.length] } : {}}
+            >
+              {format(day.date, 'EEE, MMM d')}
+            </button>
+          ))}
+        </div>
+        <div className="px-4 space-y-8">
+        {visibleDays.map((day, di) => (
           <div key={di}>
             {day.date.getTime() !== 8640000000000000 ? (
               <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
@@ -199,22 +221,54 @@ export function ItineraryClient({ trip }: Props) {
               <div className="absolute left-5 top-4 bottom-4 w-0.5 bg-border" />
 
               <div className="space-y-3">
-                {day.activities.map((activity) => (
-                  <ActivityRow
-                    key={activity.id}
-                    activity={activity}
-                    toggling={togglingId === activity.id}
-                    deleting={deletingId === activity.id}
-                    onToggle={toggleVisited}
-                    onMemory={setMemoryActivity}
-                    onDelete={deleteActivity}
-                    onEdit={setEditActivity}
-                  />
-                ))}
+                {(() => {
+                  type Bucket = { groupLabel: string; activities: typeof day.activities } | { groupLabel: null; activity: (typeof day.activities)[0] }
+                  const buckets: Bucket[] = []
+                  for (const activity of day.activities) {
+                    if (activity.groupLabel) {
+                      const last = buckets[buckets.length - 1]
+                      if (last && last.groupLabel === activity.groupLabel) {
+                        (last as { groupLabel: string; activities: typeof day.activities }).activities.push(activity)
+                      } else {
+                        buckets.push({ groupLabel: activity.groupLabel, activities: [activity] })
+                      }
+                    } else {
+                      buckets.push({ groupLabel: null, activity })
+                    }
+                  }
+                  return buckets.map((bucket, bi) => {
+                    if (bucket.groupLabel === null) {
+                      const a = bucket.activity
+                      return (
+                        <ActivityRow key={a.id} activity={a} toggling={togglingId === a.id} deleting={deletingId === a.id}
+                          onToggle={toggleVisited} onMemory={setMemoryActivity} onDelete={deleteActivity} onEdit={setEditActivity} />
+                      )
+                    }
+                    return (
+                      <div key={bi} className="relative">
+                        {/* label sits above the group box, aligned with the cards (past the timeline dots) */}
+                        <div className="pl-11 pb-1.5">
+                          <span className="text-xs font-semibold text-sky-500 uppercase tracking-wide">{bucket.groupLabel}</span>
+                        </div>
+                        {/* light background box wrapping just the card column */}
+                        <div className="relative">
+                          <div className="absolute left-11 right-0 top-0 bottom-0 bg-sky-50 border border-sky-100 rounded-2xl" />
+                          <div className="relative space-y-3 py-2">
+                            {bucket.activities.map(a => (
+                              <ActivityRow key={a.id} activity={a} toggling={togglingId === a.id} deleting={deletingId === a.id}
+                                onToggle={toggleVisited} onMemory={setMemoryActivity} onDelete={deleteActivity} onEdit={setEditActivity} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             </div>
           </div>
         ))}
+        </div>
       </div>
       )}
 
@@ -320,6 +374,9 @@ function Header({ destination, view, onViewChange, trip, grouped }: {
 
   return (
     <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+      <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-5 h-5" />
+      </Link>
       <div className="flex-1">
         <h1 className="font-semibold">Itinerary</h1>
         <p className="text-xs text-muted-foreground">{destination}</p>

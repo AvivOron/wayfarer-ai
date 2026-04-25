@@ -129,6 +129,7 @@ model Activity {
   scheduledAt  DateTime?
   durationMins Int?
   notes        String?
+  groupLabel   String?
   visited      Boolean   @default(false)
   aiGenerated  Boolean   @default(false)
   sortOrder    Int       @default(0)

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Sparkles, Loader2, MapPin, Star, X } from 'lucide-react'
+import Link from 'next/link'
+import { Search, Plus, Sparkles, Loader2, MapPin, Star, X, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Trip, Activity } from '@/types'
@@ -35,6 +36,7 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
   const [generating, setGenerating] = useState(false)
   const [addingPlaceId, setAddingPlaceId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   async function searchPlaces() {
     if (!query.trim()) return
@@ -163,11 +165,21 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
     setRemovingId(null)
   }
 
+  function handleGenerateClick() {
+    const hasItinerary = activities.some(a => a.aiGenerated)
+    if (hasItinerary) {
+      setConfirmDiscard(true)
+    } else {
+      generateSchedule()
+    }
+  }
+
   async function generateSchedule() {
     if (activities.length === 0) {
       toast.error('Add some spots first!')
       return
     }
+    setConfirmDiscard(false)
     setGenerating(true)
     try {
       const res = await fetch('/wayfarer-ai/api/ai/schedule', {
@@ -214,13 +226,14 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
             scheduledAt: date.toISOString(),
             durationMins: act.durationMins,
             notes: act.notes,
+            groupLabel: act.groupLabel ?? null,
             aiGenerated: true,
             sortOrder: di * 100 + ai,
           }
         })
       )
 
-      // Clear AI-generated ones and replace
+      // Clear only AI-generated activities and replace with new schedule
       await Promise.all(
         activities.filter(a => a.aiGenerated).map(a =>
           fetch(`/wayfarer-ai/api/trips/${trip.id}/activities?activityId=${a.id}`, { method: 'DELETE' })
@@ -251,11 +264,17 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
   const mustSee = activities.filter(a => !a.aiGenerated)
 
   return (
+    <>
     <div>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3">
-        <h1 className="font-semibold">Planner</h1>
-        <p className="text-xs text-muted-foreground">{trip.destination}</p>
+      <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="font-semibold">Planner</h1>
+          <p className="text-xs text-muted-foreground">{trip.destination}</p>
+        </div>
       </div>
 
       <div className="px-4 py-6 space-y-6">
@@ -369,7 +388,7 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
         {/* Generate button */}
         <Button
           className="w-full bg-gradient-to-r from-sky-500 to-ocean-500 text-white rounded-2xl h-12 font-semibold gap-2 shadow-lg"
-          onClick={generateSchedule}
+          onClick={handleGenerateClick}
           disabled={generating || mustSee.length === 0}
         >
           {generating ? (
@@ -385,6 +404,22 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
 
 
     </div>
+
+    {/* Discard confirmation */}
+    {confirmDiscard && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDiscard(false)} />
+        <div className="relative bg-card rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4">
+          <h2 className="font-semibold text-base">Discard current itinerary?</h2>
+          <p className="text-sm text-muted-foreground">Generating a new schedule will replace your existing itinerary. This can&apos;t be undone.</p>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={() => setConfirmDiscard(false)}>Cancel</Button>
+            <Button className="flex-1 bg-gradient-to-r from-sky-500 to-ocean-500 text-white" onClick={generateSchedule}>Regenerate</Button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
 

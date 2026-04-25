@@ -276,7 +276,7 @@ export function ItineraryMap({ activities, tripDestination }: Props) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Day selector — always visible at top */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide shrink-0">
+      <div className="flex gap-2 px-4 pt-6 pb-3 overflow-x-auto scrollbar-hide shrink-0">
         {days.map((day, i) => (
           <button
             key={i}
@@ -286,9 +286,7 @@ export function ItineraryMap({ activities, tripDestination }: Props) {
                 ? 'text-white border-transparent'
                 : 'border-border text-muted-foreground bg-card hover:border-primary/50'
             }`}
-            style={selectedDay === i
-              ? { backgroundColor: DAY_COLORS[i % DAY_COLORS.length], borderColor: DAY_COLORS[i % DAY_COLORS.length] }
-              : {}}
+            style={selectedDay === i ? { backgroundColor: DAY_COLORS[i % DAY_COLORS.length] } : {}}
           >
             {day.label}
           </button>

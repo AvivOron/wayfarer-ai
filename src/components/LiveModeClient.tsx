@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Zap, Loader2, MapPin, Clock, Plus, Navigation } from 'lucide-react'
+import Link from 'next/link'
+import { Zap, Loader2, MapPin, Clock, Plus, Navigation, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Trip } from '@/types'
 import { NearbyRecommendation } from '@/lib/gemini'
@@ -165,6 +166,9 @@ export function LiveModeClient({ trip }: Props) {
     <div className="flex flex-col min-h-screen">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
         <div className="flex-1">
           <h1 className="font-semibold">Live Mode</h1>
           <p className="text-xs text-muted-foreground">{trip.destination}</p>

@@ -68,6 +68,7 @@ export interface ScheduledActivity {
   travelMinsFromPrevious: number
   notes: string
   emoji: string
+  groupLabel?: string
 }
 
 export interface DaySchedule {
@@ -159,17 +160,20 @@ Trip details:
 - Transport: ${ctx.transport}
 - Group: ${ctx.groupSize} ${ctx.groupType} ${kidsNote}
 - Interests: ${ctx.interests.join(', ')}${foodNote}${dietNote}
-- Must-see spots saved by user:
+- Must-see spots saved by user (YOU MUST INCLUDE ALL OF THEM in the schedule, distributed across days):
 ${ctx.mustSee.map((s, i) => `  ${i + 1}. ${s.name} (${s.category}) - ${s.address}`).join('\n')}${notesNote}
 
 Create an optimized day-by-day itinerary. Rules:
+- CRITICAL: Every single must-see spot listed above MUST appear in the schedule — do not skip any
 - Cluster geographically nearby spots on the same day to minimize travel
 - Account for typical opening hours (museums often close Mon, many restaurants close between 3-6pm)
 - Insert meal breaks (breakfast ~8am, lunch ~12:30pm, dinner ~7pm)
 - Start each day from the base accommodation, end near it
 - NEVER include activities like "return to hotel", "evening relaxation at accommodation", "check in", "unwind at hotel", or any activity whose purpose is simply going back to the accommodation — these are implied and add no value
 - Consider child-friendliness if there are young children
-- Keep a realistic pace — max 4-5 activities per day
+- Keep a realistic pace — aim for 4-6 activities per day, more if the must-see list requires it
+- Each activity must be ONE specific venue, place, or restaurant — NEVER bundle multiple places into one entry
+- If consecutive activities share a theme or area (e.g. a neighbourhood stroll), give each its own entry and set the same "groupLabel" on all of them (e.g. groupLabel: "Marylebone Exploration"). The UI will render that as a header above the first entry in the group. Activities that are standalone should omit groupLabel entirely.
 
 Return a JSON object with exactly this structure:
 {
@@ -187,7 +191,8 @@ Return a JSON object with exactly this structure:
           "durationMins": number,
           "travelMinsFromPrevious": number,
           "notes": "short insider note",
-          "emoji": "single emoji"
+          "emoji": "single emoji",
+          "groupLabel": "optional: shared label for consecutive activities in the same area/theme, omit if standalone"
         }
       ]
     }

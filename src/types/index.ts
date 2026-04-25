@@ -101,6 +101,7 @@ export interface Activity {
   scheduledAt: string | null
   durationMins: number | null
   notes: string | null
+  groupLabel: string | null
   visited: boolean
   aiGenerated: boolean
   sortOrder: number

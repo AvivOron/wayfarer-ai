@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Loader2, Lightbulb, Trash2 } from 'lucide-react'
+import { Loader2, Lightbulb, Trash2, ArrowLeft } from 'lucide-react'
 import { Trip } from '@/types'
 import { toast } from 'sonner'
 
@@ -83,11 +84,16 @@ export function LocalTipsTab({ trip }: Props) {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3">
-        <h1 className="font-semibold flex items-center gap-2">
-          <Lightbulb className="w-4 h-4" /> Local Tips
-        </h1>
-        <p className="text-xs text-muted-foreground">{trip.destination}</p>
+      <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="font-semibold flex items-center gap-2">
+            <Lightbulb className="w-4 h-4" /> Local Tips
+          </h1>
+          <p className="text-xs text-muted-foreground">{trip.destination}</p>
+        </div>
       </div>
 
       <div className="flex-1 px-4 py-6">
