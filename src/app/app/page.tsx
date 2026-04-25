@@ -8,10 +8,18 @@ export default async function AppPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/')
 
-  const trips = await prisma.trip.findMany({
-    where: { userId: session.user.id },
-    orderBy: { startDate: 'desc' },
-  })
+  const now = new Date()
+  const [upcoming, past] = await Promise.all([
+    prisma.trip.findMany({
+      where: { userId: session.user.id, endDate: { gte: now } },
+      orderBy: { startDate: 'asc' },
+    }),
+    prisma.trip.findMany({
+      where: { userId: session.user.id, endDate: { lt: now } },
+      orderBy: { startDate: 'desc' },
+    }),
+  ])
+  const trips = [...upcoming, ...past]
 
   return <TripListClient trips={JSON.parse(JSON.stringify(trips))} user={session.user} />
 }

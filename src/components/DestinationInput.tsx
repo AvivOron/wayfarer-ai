@@ -4,17 +4,24 @@ import { useState, useRef, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
+interface Prediction {
+  description: string
+  placeId: string
+}
+
 interface Props {
   value: string
   onChange: (value: string) => void
+  onSelectPlace?: (prediction: Prediction) => void
   className?: string
   id?: string
   autoFocus?: boolean
   types?: string
+  components?: string
 }
 
-export function DestinationInput({ value, onChange, className, id, autoFocus, types }: Props) {
-  const [predictions, setPredictions] = useState<string[]>([])
+export function DestinationInput({ value, onChange, onSelectPlace, className, id, autoFocus, types, components }: Props) {
+  const [predictions, setPredictions] = useState<Prediction[]>([])
   const [open, setOpen] = useState(false)
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -37,6 +44,7 @@ export function DestinationInput({ value, onChange, className, id, autoFocus, ty
       try {
         const params = new URLSearchParams({ input })
         if (types) params.set('types', types)
+        if (components) params.set('components', components)
         const res = await fetch(`/wayfarer-ai/api/places/autocomplete?${params}`)
         const data = await res.json()
         setPredictions(data.predictions ?? [])
@@ -48,8 +56,9 @@ export function DestinationInput({ value, onChange, className, id, autoFocus, ty
     }, 300)
   }
 
-  function select(prediction: string) {
-    onChange(prediction)
+  function select(prediction: Prediction) {
+    onChange(prediction.description)
+    onSelectPlace?.(prediction)
     setPredictions([])
     setOpen(false)
   }
@@ -70,11 +79,11 @@ export function DestinationInput({ value, onChange, className, id, autoFocus, ty
         <ul className="absolute z-50 mt-1 w-full bg-card border border-border rounded-xl shadow-lg overflow-hidden">
           {predictions.map(p => (
             <li
-              key={p}
+              key={p.placeId}
               onMouseDown={() => select(p)}
               className="px-4 py-3 text-sm cursor-pointer hover:bg-muted transition-colors"
             >
-              {p}
+              {p.description}
             </li>
           ))}
         </ul>

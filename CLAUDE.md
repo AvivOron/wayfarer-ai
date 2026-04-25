@@ -53,6 +53,10 @@ npm run db:generate  # Regenerate Prisma client after schema changes
 
 **Schema change:** Edit `prisma/schema.prisma`, then run `npm run db:migrate` (migration) or `npm run db:push` (quick push), then `npm run db:generate`.
 
+## Onboarding & Edit Wizard Parity
+
+`OnboardingWizard` (`src/components/OnboardingWizard.tsx`) and `TripEditSheet` (`src/components/TripEditSheet.tsx`) collect the same trip fields across the same steps. Any change to one **must** be mirrored in the other — new fields, new steps, validation changes, UI changes.
+
 ## Deployment
 
 Deployed as a standalone Vercel project. `avivo.dev` rewrites traffic from `/wayfarer-ai/**` to the deployed URL — these rewrites are already in `/Users/aviv/Code/avivo.dev/vercel.json`.

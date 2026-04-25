@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ interface Props {
 interface EditData {
   title: string
   destination: string
+  countryCode: string | null
   startDate: string
   endDate: string
   hotelAddress: string
@@ -50,6 +51,7 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
   const [data, setData] = useState<EditData>({
     title: trip.title,
     destination: trip.destination,
+    countryCode: null,
     startDate: trip.startDate.split('T')[0],
     endDate: trip.endDate.split('T')[0],
     hotelAddress: trip.hotelAddress ?? '',
@@ -63,6 +65,24 @@ export function TripEditSheet({ trip, onClose, onSaved }: Props) {
     dietaryRestrictions: trip.dietaryRestrictions ?? [],
     notes: trip.notes ?? '',
   })
+
+  useEffect(() => {
+    async function seedCountryCode() {
+      try {
+        const params = new URLSearchParams({ input: trip.destination, types: '(cities)' })
+        const res = await fetch(`/wayfarer-ai/api/places/autocomplete?${params}`)
+        const json = await res.json()
+        const first = json.predictions?.[0]
+        if (!first) return
+        const detail = await fetch(`/wayfarer-ai/api/places/detail?placeId=${first.placeId}`)
+        const d = await detail.json()
+        if (d.countryCode) setData(prev => ({ ...prev, countryCode: d.countryCode }))
+      } catch {
+        // non-critical
+      }
+    }
+    seedCountryCode()
+  }, [trip.destination])
 
   function update(patch: Partial<EditData>) {
     setData(d => ({ ...d, ...patch }))
@@ -184,7 +204,14 @@ function StepDestination({ data, update }: { data: EditData; update: (p: Partial
         <DestinationInput
           id="destination"
           value={data.destination}
-          onChange={v => update({ destination: v })}
+          onChange={v => update({ destination: v, countryCode: null })}
+          onSelectPlace={async ({ placeId }) => {
+            try {
+              const res = await fetch(`/wayfarer-ai/api/places/detail?placeId=${placeId}`)
+              const d = await res.json()
+              if (d.countryCode) update({ countryCode: d.countryCode })
+            } catch { /* non-critical */ }
+          }}
           className="mt-1"
           autoFocus
           types="(cities)"
@@ -269,6 +296,7 @@ function StepHotel({ data, update }: { data: EditData; update: (p: Partial<EditD
           value={data.hotelAddress}
           onChange={v => update({ hotelAddress: v })}
           className="mt-1"
+          components={data.countryCode ? `country:${data.countryCode}` : undefined}
         />
         <p className="text-xs text-muted-foreground mt-2">Used to calculate travel times in your itinerary</p>
       </div>

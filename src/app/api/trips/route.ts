@@ -7,13 +7,21 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const trips = await prisma.trip.findMany({
-    where: { userId: session.user.id },
-    include: { activities: { orderBy: { sortOrder: 'asc' } } },
-    orderBy: { startDate: 'desc' },
-  })
+  const now = new Date()
+  const [upcoming, past] = await Promise.all([
+    prisma.trip.findMany({
+      where: { userId: session.user.id, endDate: { gte: now } },
+      include: { activities: { orderBy: { sortOrder: 'asc' } } },
+      orderBy: { startDate: 'asc' },
+    }),
+    prisma.trip.findMany({
+      where: { userId: session.user.id, endDate: { lt: now } },
+      include: { activities: { orderBy: { sortOrder: 'asc' } } },
+      orderBy: { startDate: 'desc' },
+    }),
+  ])
 
-  return NextResponse.json(trips)
+  return NextResponse.json([...upcoming, ...past])
 }
 
 export async function POST(req: NextRequest) {
@@ -24,7 +32,7 @@ export async function POST(req: NextRequest) {
   const {
     title, destination, lat, lng, startDate, endDate,
     hotelAddress, hotelLat, hotelLng, accommodationType, transport, groupType,
-    groupSize, childAges, interests, foodPreferences, dietaryRestrictions,
+    groupSize, childAges, interests, foodPreferences, dietaryRestrictions, notes,
   } = body
 
   const trip = await prisma.trip.create({
@@ -47,6 +55,7 @@ export async function POST(req: NextRequest) {
       interests: interests ?? [],
       foodPreferences: foodPreferences ?? [],
       dietaryRestrictions: dietaryRestrictions ?? [],
+      notes: notes ?? null,
     },
   })
 

@@ -274,9 +274,9 @@ export function ItineraryMap({ activities, tripDestination }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Day selector */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Day selector — always visible at top */}
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide shrink-0">
         {days.map((day, i) => (
           <button
             key={i}
@@ -295,14 +295,14 @@ export function ItineraryMap({ activities, tripDestination }: Props) {
         ))}
       </div>
 
-      {/* Map */}
-      <div ref={mapRef} className="flex-1" style={{ minHeight: 340 }} />
+      {/* Map — takes remaining space */}
+      <div ref={mapRef} className="flex-1 min-h-0" />
 
-      {/* Activity list for selected day */}
+      {/* Activity list for selected day — fixed height at bottom */}
       {days[selectedDay] && (() => {
         let pinCounter = 0
         return (
-        <div className="px-4 py-3 space-y-1 max-h-44 overflow-y-auto border-t border-border bg-card">
+        <div className="px-4 py-3 space-y-1 h-44 overflow-y-auto border-t border-border bg-card shrink-0">
           {days[selectedDay].activities.map((a) => {
             const lat = a.lat ?? a.resolvedLat
             const lng = a.lng ?? a.resolvedLng

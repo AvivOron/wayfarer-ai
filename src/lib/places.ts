@@ -18,6 +18,7 @@ export interface PlaceDetail extends PlaceResult {
   openNow?: boolean
   openingHours?: string[]
   priceLevel?: number
+  countryCode?: string
 }
 
 export async function searchPlaces(query: string, lat?: number, lng?: number, destination?: string): Promise<PlaceResult[]> {
@@ -54,7 +55,7 @@ export async function searchPlaces(query: string, lat?: number, lng?: number, de
 export async function getPlaceDetail(placeId: string): Promise<PlaceDetail> {
   const params = new URLSearchParams({
     place_id: placeId,
-    fields: 'place_id,name,formatted_address,geometry,rating,types,photos,opening_hours,formatted_phone_number,website,price_level',
+    fields: 'place_id,name,formatted_address,geometry,rating,types,photos,opening_hours,formatted_phone_number,website,price_level,address_components',
     key: MAPS_API_KEY,
     language: 'en',
   })
@@ -65,6 +66,7 @@ export async function getPlaceDetail(placeId: string): Promise<PlaceDetail> {
   if (data.status !== 'OK') throw new Error(`Place details error: ${data.status}`)
 
   const r = data.result as PlaceDetailApiResult
+  const countryComponent = r.address_components?.find(c => c.types.includes('country'))
   return {
     placeId: r.place_id,
     name: r.name,
@@ -79,6 +81,7 @@ export async function getPlaceDetail(placeId: string): Promise<PlaceDetail> {
     openNow: r.opening_hours?.open_now,
     openingHours: r.opening_hours?.weekday_text,
     priceLevel: r.price_level,
+    countryCode: countryComponent?.short_name,
   }
 }
 
@@ -102,4 +105,5 @@ interface PlaceDetailApiResult extends PlaceApiResult {
   website?: string
   opening_hours?: { open_now: boolean; weekday_text: string[] }
   price_level?: number
+  address_components?: { types: string[]; short_name: string; long_name: string }[]
 }

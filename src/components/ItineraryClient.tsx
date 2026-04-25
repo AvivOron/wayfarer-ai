@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Smile, Trash2 } from 'lucide-react'
+import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Share2, Smile, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Trip, Activity } from '@/types'
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { MemorySheet } from '@/components/MemorySheet'
@@ -19,6 +19,51 @@ interface Props {
 }
 
 type GroupedDay = { date: Date; activities: Activity[] }
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  attraction: '🏯',
+  restaurant: '🍜',
+  cafe: '☕',
+  museum: '🎨',
+  park: '🌳',
+  hotel: '🏨',
+  transport: '🚌',
+  other: '📌',
+}
+
+function buildTripShareText(trip: Trip, grouped: GroupedDay[]): string {
+  const nights = differenceInDays(new Date(trip.endDate), new Date(trip.startDate))
+  const dateRange = `${format(new Date(trip.startDate), 'MMM d')} – ${format(new Date(trip.endDate), 'MMM d, yyyy')}`
+
+  const lines: string[] = [
+    `✈ *${trip.title}*`,
+    `📌 ${trip.destination}`,
+    `🗓 ${dateRange} · ${nights} night${nights !== 1 ? 's' : ''}`,
+  ]
+
+  if (trip.hotelAddress) {
+    lines.push(`🏨 ${trip.hotelAddress}`)
+  }
+
+  const scheduled = grouped.filter(d => d.date.getTime() !== 8640000000000000)
+
+  scheduled.forEach((day, di) => {
+    lines.push('')
+    lines.push(`📅 *Day ${di + 1} — ${format(day.date, 'EEEE, MMM d')}*`)
+    day.activities.forEach(a => {
+      const emoji = CATEGORY_EMOJI[a.category] ?? '📌'
+      const time = a.scheduledAt ? format(new Date(a.scheduledAt), 'HH:mm') + ' ' : ''
+      const dur = a.durationMins ? ` (${a.durationMins < 60 ? `${a.durationMins}min` : `${Math.round(a.durationMins / 60 * 10) / 10}h`})` : ''
+      lines.push(`${emoji} ${time}${a.name}${dur}`)
+      if (a.notes) lines.push(`   _${a.notes}_`)
+    })
+  })
+
+  lines.push('')
+  lines.push('_Shared via Wayfarer AI_ 🌍')
+
+  return lines.join('\n')
+}
 
 function groupByDay(activities: Activity[]): GroupedDay[] {
   const map = new Map<string, Activity[]>()
@@ -112,7 +157,7 @@ export function ItineraryClient({ trip }: Props) {
   if (activities.length === 0) {
     return (
       <div>
-        <Header tripId={trip.id} destination={trip.destination} view={view} onViewChange={setView} />
+        <Header tripId={trip.id} destination={trip.destination} view={view} onViewChange={setView} trip={trip} grouped={[]} />
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
           <div className="text-5xl mb-4">📅</div>
           <h2 className="text-lg font-semibold mb-2">No itinerary yet</h2>
@@ -127,7 +172,7 @@ export function ItineraryClient({ trip }: Props) {
 
   return (
     <div>
-      <Header tripId={trip.id} destination={trip.destination} view={view} onViewChange={setView} />
+      <Header tripId={trip.id} destination={trip.destination} view={view} onViewChange={setView} trip={trip} grouped={grouped} />
       {view === 'map' ? (
         <div style={{ height: 'calc(100vh - 57px - 72px)' }}>
           <ItineraryMap activities={activities} tripDestination={trip.destination} />
@@ -251,12 +296,26 @@ function EditActivitySheet({ activity, onSave, onClose }: {
   )
 }
 
-function Header({ destination, view, onViewChange }: {
+function Header({ destination, view, onViewChange, trip, grouped }: {
   tripId: string
   destination: string
   view: 'list' | 'map'
   onViewChange: (v: 'list' | 'map') => void
+  trip: Trip
+  grouped: GroupedDay[]
 }) {
+  async function shareTrip() {
+    const text = buildTripShareText(trip, grouped)
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('Itinerary copied! Paste it to your friends 📋')
+    } catch {
+      // Fallback for browsers that block clipboard access
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
     <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
       <div className="flex-1">
@@ -283,6 +342,15 @@ function Header({ destination, view, onViewChange }: {
           <MapIcon className="w-3.5 h-3.5" /> Map
         </button>
       </div>
+      {grouped.length > 0 && (
+        <button
+          onClick={shareTrip}
+          className="w-8 h-8 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 flex items-center justify-center transition-colors"
+          title="Share your trip"
+        >
+          <Share2 className="w-4 h-4 text-[#25D366]" />
+        </button>
+      )}
     </div>
   )
 }

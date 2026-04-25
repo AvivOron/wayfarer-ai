@@ -27,13 +27,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const existing = await prisma.trip.findFirst({ where: { id, userId: session.user.id } })
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const body = await req.json()
+  const {
+    title, destination, lat, lng, startDate, endDate,
+    hotelAddress, hotelLat, hotelLng, accommodationType, transport, groupType,
+    groupSize, childAges, interests, foodPreferences, dietaryRestrictions, notes,
+  } = await req.json()
+
   const trip = await prisma.trip.update({
     where: { id },
     data: {
-      ...body,
-      startDate: body.startDate ? new Date(body.startDate) : undefined,
-      endDate: body.endDate ? new Date(body.endDate) : undefined,
+      title, destination, lat, lng,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      hotelAddress, hotelLat, hotelLng, accommodationType, transport, groupType,
+      groupSize, childAges, interests, foodPreferences, dietaryRestrictions, notes,
     },
     include: { activities: { orderBy: [{ scheduledAt: 'asc' }, { sortOrder: 'asc' }] } },
   })

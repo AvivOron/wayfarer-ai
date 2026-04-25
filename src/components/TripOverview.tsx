@@ -48,6 +48,7 @@ const DESTINATION_PHOTOS: Record<string, string> = {
   'beijing':       'photo-1508804185872-d7badad00f7d',
   'tel aviv':      'photo-1544216717-3bbf52512659',
   'jerusalem':     'photo-1552423310-bd69d4cb939e',
+  'eilat':         'photo-1567073161926-d6179e60492f',
   'cairo':         'photo-1539650116574-75c0c6d73f6e',
   'cape town':     'photo-1580060839134-75a5edca2e99',
   'toronto':       'photo-1517090504586-fde19ea6066f',
@@ -92,8 +93,6 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
   const [photoUrl, setPhotoUrl] = useState(() => getDestinationPhoto(trip.destination))
   const fallbackPhoto = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=90'
   const nights = differenceInDays(new Date(trip.endDate), new Date(trip.startDate))
-  const visited = (trip.activities ?? []).filter(a => a.visited).length
-  const total = (trip.activities ?? []).length
   const transportEmoji = TRANSPORT_OPTIONS.find(t => t.value === trip.transport)?.emoji ?? '🚇'
   const daysUntil = differenceInCalendarDays(new Date(trip.startDate), new Date())
   const tripStarted = daysUntil <= 0 && differenceInCalendarDays(new Date(trip.endDate), new Date()) >= 0
@@ -106,6 +105,7 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
     if (res.ok) {
       toast.success('Trip deleted')
       router.push('/app')
+      router.refresh()
     } else {
       toast.error('Failed to delete trip')
       setDeleting(false)
@@ -196,22 +196,6 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
 
       {/* Content */}
       <div className="px-4 py-6 space-y-6">
-        {/* Progress */}
-        {total > 0 && (
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Activities visited</span>
-              <span className="text-sm text-muted-foreground">{visited}/{total}</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className="bg-sky-500 h-2 rounded-full transition-all"
-                style={{ width: total > 0 ? `${(visited / total) * 100}%` : '0%' }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Weather */}
         <WeatherWidget
           lat={trip.lat}

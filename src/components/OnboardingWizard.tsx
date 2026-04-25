@@ -17,6 +17,7 @@ interface WizardData {
   destination: string
   lat: number | null
   lng: number | null
+  countryCode: string | null
   startDate: string
   endDate: string
   hotelAddress: string
@@ -50,6 +51,7 @@ export function OnboardingWizard() {
     destination: '',
     lat: null,
     lng: null,
+    countryCode: null,
     startDate: '',
     endDate: '',
     hotelAddress: '',
@@ -154,6 +156,17 @@ export function OnboardingWizard() {
 }
 
 function StepDestination({ data, update }: { data: WizardData; update: (p: Partial<WizardData>) => void }) {
+  async function handleSelectPlace({ placeId }: { description: string; placeId: string }) {
+    try {
+      const res = await fetch(`/wayfarer-ai/api/places/detail?placeId=${placeId}`)
+      const detail = await res.json()
+      const countryCode = detail.countryCode ?? null
+      if (countryCode) update({ countryCode })
+    } catch {
+      // non-critical — hotel autocomplete just won't be restricted
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -161,7 +174,8 @@ function StepDestination({ data, update }: { data: WizardData; update: (p: Parti
         <DestinationInput
           id="destination"
           value={data.destination}
-          onChange={v => update({ destination: v })}
+          onChange={v => update({ destination: v, countryCode: null })}
+          onSelectPlace={handleSelectPlace}
           className="mt-1"
           autoFocus
           types="(cities)"
@@ -245,6 +259,7 @@ function StepHotel({ data, update }: { data: WizardData; update: (p: Partial<Wiz
           value={data.hotelAddress}
           onChange={v => update({ hotelAddress: v })}
           className="mt-1"
+          components={data.countryCode ? `country:${data.countryCode}` : undefined}
         />
         <p className="text-xs text-muted-foreground mt-2">Used to calculate travel times in your itinerary</p>
       </div>
