@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, ChevronDown, Circle, Clock, ExternalLink, List, Loader2, Map as MapIcon, MapPin, Pencil, Phone, Share2, Smile, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -95,19 +95,6 @@ export function ItineraryClient({ trip }: Props) {
   const [memoryActivity, setMemoryActivity] = useState<Activity | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
 
-  useEffect(() => {
-    if (view === 'map') {
-      window.scrollTo({ top: 0 })
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [view])
-
-  useEffect(() => {
-    return () => { document.body.style.overflow = '' }
-  }, [])
 
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -189,7 +176,7 @@ export function ItineraryClient({ trip }: Props) {
     <div>
       <Header tripId={trip.id} destination={trip.destination} view={view} onViewChange={setView} trip={trip} grouped={grouped} />
       {view === 'map' ? (
-        <div style={{ height: 'calc(100vh - 57px - 72px)' }}>
+        <div className="fixed inset-0 z-10 flex flex-col" style={{ top: '57px', bottom: '72px' }}>
           <ItineraryMap activities={activities} tripDestination={trip.destination} />
         </div>
       ) : (

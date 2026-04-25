@@ -32,7 +32,6 @@ export function TripShell({ trip: initialTrip }: Props) {
   const [itineraryKey, setItineraryKey] = useState(0)
 
   function switchTab(id: Tab) {
-    document.body.style.overflow = ''
     setTab(id)
     window.scrollTo({ top: 0 })
   }
