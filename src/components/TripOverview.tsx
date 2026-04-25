@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, MapPin, CalendarDays, Users, Plane,
-  Trash2, Loader2, Pencil
+  Trash2, Loader2, Pencil, BedDouble
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -189,6 +189,17 @@ export function TripOverview({ trip: initialTrip, onTripUpdate }: Props) {
               <Badge className="bg-white/20 text-white border-0 backdrop-blur rounded-full">
                 {transportEmoji} {trip.transport}
               </Badge>
+              {trip.hotelAddress && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.hotelAddress)}${trip.hotelLat && trip.hotelLng ? `&query=${trip.hotelLat},${trip.hotelLng}` : ''}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 bg-white/20 text-white backdrop-blur rounded-full px-2.5 py-0.5 text-xs font-semibold hover:bg-white/30 transition-colors"
+                >
+                  <BedDouble className="w-3 h-3 shrink-0" />
+                  <span className="truncate max-w-[160px]">{trip.hotelAddress}</span>
+                </a>
+              )}
             </div>
           </div>
         </div>
