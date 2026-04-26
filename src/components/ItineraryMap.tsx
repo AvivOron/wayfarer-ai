@@ -249,7 +249,11 @@ export function ItineraryMap({ activities, tripDestination }: Props) {
       polylinesRef.current.push(polyline)
     }
 
-    if (!bounds.isEmpty()) {
+    const firstPin = mappable.find(x => !x.isTransport)
+    if (firstPin) {
+      mapInstance.current.setCenter(firstPin.pos)
+      mapInstance.current.setZoom(15)
+    } else if (!bounds.isEmpty()) {
       mapInstance.current.fitBounds(bounds, 60)
     }
   }, [selectedDay, days, mapLoaded, resolvedActivities])

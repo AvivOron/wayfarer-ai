@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Sparkles, Loader2, MapPin, Star, X, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,13 @@ interface Props {
 
 export function PlannerClient({ trip, onScheduleGenerated }: Props) {
   const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<{ description: string; placeId: string; distanceMeters?: number }[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const autocompleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchWrapperRef = useRef<HTMLDivElement>(null)
+  const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(
+    trip.hotelLat != null && trip.hotelLng != null ? { lat: trip.hotelLat, lng: trip.hotelLng } : null
+  )
   const [results, setResults] = useState<PlaceResult[]>([])
   const [areaResults, setAreaResults] = useState<AreaPlace[]>([])
   const [searching, setSearching] = useState(false)
@@ -38,23 +45,98 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
 
-  async function searchPlaces() {
-    if (!query.trim()) return
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    if (homeCoords) return
+    const address = trip.hotelAddress ?? trip.destination
+    const params = new URLSearchParams({ q: address, destination: trip.destination })
+    fetch(`/wayfarer-ai/api/places/search?${params}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const first = data?.results?.[0]
+        if (first?.lat != null) setHomeCoords({ lat: first.lat, lng: first.lng })
+      })
+      .catch(() => {})
+  }, [])
+
+  function handleQueryChange(value: string) {
+    setQuery(value)
+    setShowSuggestions(false)
+    setSuggestions([])
+    if (autocompleteTimer.current) clearTimeout(autocompleteTimer.current)
+    if (!value.trim()) return
+    autocompleteTimer.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ input: value })
+        if (homeCoords) params.set('origin', `${homeCoords.lat},${homeCoords.lng}`)
+        const res = await fetch(`/wayfarer-ai/api/places/autocomplete?${params}`)
+        const data = await res.json()
+        if (data.predictions?.length) {
+          const sorted = [...data.predictions].sort((a, b) => {
+            if (a.distanceMeters == null && b.distanceMeters == null) return 0
+            if (a.distanceMeters == null) return 1
+            if (b.distanceMeters == null) return -1
+            return a.distanceMeters - b.distanceMeters
+          })
+          setSuggestions(sorted)
+          setShowSuggestions(true)
+        }
+      } catch {
+        // silently ignore autocomplete errors
+      }
+    }, 300)
+  }
+
+  async function handleSuggestionClick(description: string, placeId: string) {
+    setQuery(description)
+    setSuggestions([])
+    setShowSuggestions(false)
     setSearching(true)
     setResults([])
     setAreaResults([])
     try {
-      const classifiedIntent = await classifyQueryIntent(query, trip.destination)
-      if (classifiedIntent === 'area') {
-        await exploreAreaQuery()
+      const res = await fetch(`/wayfarer-ai/api/places/detail?placeId=${encodeURIComponent(placeId)}`)
+      const data = await res.json()
+      if (data.placeId) {
+        setResults([data])
       } else {
-        const places = await searchGooglePlaces()
-        const fallbackIntent = classifyPlannerSearch(query, places)
+        searchPlaces(description)
+      }
+    } catch {
+      searchPlaces(description)
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  async function searchPlaces(q?: string) {
+    const activeQuery = q ?? query
+    if (!activeQuery.trim()) return
+    setSearching(true)
+    setResults([])
+    setAreaResults([])
+    setShowSuggestions(false)
+    try {
+      const classifiedIntent = await classifyQueryIntent(activeQuery, trip.destination)
+      if (classifiedIntent === 'area') {
+        await exploreAreaQuery(activeQuery)
+      } else {
+        const places = await searchGooglePlaces(activeQuery)
+        const fallbackIntent = classifyPlannerSearch(activeQuery, places)
 
         if (fallbackIntent === 'place') {
           setResults(places.filter(isSpecificPlace))
         } else {
-          await exploreAreaQuery()
+          await exploreAreaQuery(activeQuery)
         }
       }
     } catch {
@@ -80,9 +162,9 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
     }
   }
 
-  async function searchGooglePlaces(): Promise<PlaceResult[]> {
+  async function searchGooglePlaces(q: string): Promise<PlaceResult[]> {
     const params = new URLSearchParams({
-      q: query,
+      q,
       destination: trip.destination,
       lat: String(trip.lat ?? ''),
       lng: String(trip.lng ?? ''),
@@ -92,11 +174,11 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
     return data.results ?? []
   }
 
-  async function exploreAreaQuery() {
+  async function exploreAreaQuery(q: string) {
     const aiRes = await fetch('/wayfarer-ai/api/ai/explore-area', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ area: query, destination: trip.destination, interests: trip.interests }),
+      body: JSON.stringify({ area: q, destination: trip.destination, interests: trip.interests }),
     })
     const aiData = await aiRes.json()
     setAreaResults(aiData.places ?? [])
@@ -281,15 +363,39 @@ export function PlannerClient({ trip, onScheduleGenerated }: Props) {
         {/* Search */}
         <div>
           <h2 className="text-sm font-semibold mb-3">Add must-see spots</h2>
-          <div className="flex gap-2">
-            <Input
-              placeholder={`Search in ${trip.destination}…`}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && searchPlaces()}
-              className="flex-1 rounded-xl"
-            />
-            <Button onClick={searchPlaces} disabled={searching} size="icon" className="rounded-xl bg-sky-500 hover:bg-sky-600 shrink-0">
+          <div className="relative flex gap-2" ref={searchWrapperRef}>
+            <div className="flex-1 relative">
+              <Input
+                placeholder={`Search in ${trip.destination}…`}
+                value={query}
+                onChange={e => handleQueryChange(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && searchPlaces()}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                className="rounded-xl"
+              />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden">
+                  {suggestions.map(s => (
+                    <button
+                      key={s.placeId}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors"
+                      onMouseDown={e => { e.preventDefault(); handleSuggestionClick(s.description, s.placeId) }}
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span className="truncate flex-1">{s.description}</span>
+                      {s.distanceMeters != null && (
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {s.distanceMeters < 1000
+                            ? `${s.distanceMeters}m`
+                            : `${(s.distanceMeters / 1000).toFixed(1)}km`}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={() => searchPlaces()} disabled={searching} size="icon" className="rounded-xl bg-sky-500 hover:bg-sky-600 shrink-0">
               {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             </Button>
           </div>

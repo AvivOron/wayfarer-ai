@@ -16,14 +16,17 @@ export async function GET(req: NextRequest) {
   if (types) url.searchParams.set('types', types)
   const components = req.nextUrl.searchParams.get('components')
   if (components) url.searchParams.set('components', components)
+  const origin = req.nextUrl.searchParams.get('origin')
+  if (origin) url.searchParams.set('origin', origin)
   url.searchParams.set('key', process.env.GOOGLE_MAPS_API_KEY!)
 
   const res = await fetch(url.toString())
   const data = await res.json()
 
-  const predictions = (data.predictions ?? []).map((p: { description: string; place_id: string }) => ({
+  const predictions = (data.predictions ?? []).map((p: { description: string; place_id: string; distance_meters?: number }) => ({
     description: p.description,
     placeId: p.place_id,
+    distanceMeters: p.distance_meters,
   }))
   return NextResponse.json({ predictions })
 }

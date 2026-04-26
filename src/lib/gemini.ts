@@ -160,14 +160,15 @@ Trip details:
 - Transport: ${ctx.transport}
 - Group: ${ctx.groupSize} ${ctx.groupType} ${kidsNote}
 - Interests: ${ctx.interests.join(', ')}${foodNote}${dietNote}
-- Must-see spots saved by user (YOU MUST INCLUDE ALL OF THEM in the schedule, distributed across days):
+- Spots the user wants to visit — schedule each exactly once, on the most suitable day:
 ${ctx.mustSee.map((s, i) => `  ${i + 1}. ${s.name} (${s.category}) - ${s.address}`).join('\n')}${notesNote}
 
 Create an optimized day-by-day itinerary. Rules:
-- CRITICAL: Every single must-see spot listed above MUST appear in the schedule — do not skip any
+- CRITICAL: Every single spot listed above MUST appear in the schedule — do not skip any
 - Cluster geographically nearby spots on the same day to minimize travel
 - Account for typical opening hours (museums often close Mon, many restaurants close between 3-6pm)
-- Insert meal breaks (breakfast ~8am, lunch ~12:30pm, dinner ~7pm)
+- Insert meal breaks at appropriate times: breakfast ~8am, lunch ~12:30pm, dinner ~7pm. NEVER schedule lunch within 2 hours of breakfast or dinner within 2 hours of lunch — leave adequate gaps between meals
+- If the notes mention a midway stop during a drive, place that stop at a location that is geographically between the origin and the destination (roughly halfway along the route), not near the destination itself
 - Start each day from the base accommodation, end near it
 - NEVER include activities like "return to hotel", "evening relaxation at accommodation", "check in", "unwind at hotel", or any activity whose purpose is simply going back to the accommodation — these are implied and add no value
 - Consider child-friendliness if there are young children
@@ -211,13 +212,26 @@ export async function generateNearbyRecommendations(
   return parsed.recommendations as NearbyRecommendation[]
 }
 
+function deduplicateSchedule(schedule: DaySchedule[]): DaySchedule[] {
+  const seen = new Set<string>()
+  return schedule.map(day => ({
+    ...day,
+    activities: day.activities.filter(a => {
+      const key = a.name.toLowerCase().trim()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    }),
+  }))
+}
+
 export async function generateSchedule(ctx: ScheduleContext): Promise<DaySchedule[]> {
   const model = getModel()
   const prompt = buildSchedulePrompt(ctx)
   const result = await model.generateContent(prompt)
   const text = result.response.text()
   const parsed = JSON.parse(text)
-  return parsed.schedule as DaySchedule[]
+  return deduplicateSchedule(parsed.schedule as DaySchedule[])
 }
 
 export interface AreaPlace {
